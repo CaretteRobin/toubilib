@@ -9,4 +9,11 @@ interface ServicePraticienInterface
      * @return \toubilib\core\application\dto\PraticienDTO[]
      */
     public function listerPraticiens(): array;
+
+    /**
+     * Retourne le détail d'un praticien par son identifiant.
+     * @param string $id
+     * @return \toubilib\core\application\dto\PraticienDetailDTO|null
+     */
+    public function afficherPraticien(string $id): ?\toubilib\core\application\dto\PraticienDetailDTO;
 }
