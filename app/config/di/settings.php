@@ -12,5 +12,12 @@ return [
         'user' => $_ENV['prat.username'] ?? $_ENV['PRAT_DB_USER'] ?? 'toubiprat',
         'pass' => $_ENV['prat.password'] ?? $_ENV['PRAT_DB_PASS'] ?? 'toubiprat',
     ],
+    // Database settings for RDV DB
+    'db.rdv' => [
+        'host' => $_ENV['rdv.host'] ?? 'toubirdv.db',
+        'port' => (int)($_ENV['rdv.port'] ?? 5432),
+        'name' => $_ENV['rdv.database'] ?? 'toubirdv',
+        'user' => $_ENV['rdv.username'] ?? 'toubirdv',
+        'pass' => $_ENV['rdv.password'] ?? 'toubirdv',
+    ],
 ];
-
