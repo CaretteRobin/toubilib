@@ -1,20 +1,32 @@
+# Environnements & secrets
+.env
+.env.*
+!.env.example
+!.env.dist
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
 .idea/
-# IDE
 .vscode/
-.DS_STORE
-/coverage/
-# Vendor
-/vendor/
-# Logs
-/app/logs/*
-!/app/logs/README.md
-# Cache
-/var/cache/*
-.phpunit.result.cache
-cache.properties
-.php_cs.cache
-# Composer
-composer.phar
+
+# Dépendances / artefacts
+vendor/
+node_modules/
 composer.lock
-/app/vendor/
-/app/config/.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Docker
+*.pid
+*.seed
+*.tar
+**/.docker/
+docker-compose.override.yml
+
+# Cache/temp
+tmp/
+temp/
+.cache/

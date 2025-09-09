@@ -2,39 +2,30 @@
 
 use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
+use Psr\Container\ContainerInterface;
 
 // Load environment variables from app/config/.env
 $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
-// Build PHP-DI container with core services
+// Build PHP-DI container with factories (no autowire)
 $containerBuilder = new ContainerBuilder();
-$containerBuilder->addDefinitions([
-    // App settings
-    'displayErrorDetails' => fn() => (bool)($_ENV['APP_DEBUG'] ?? true),
+$containerBuilder->useAutowiring(false);
 
-    // PDO for practitioners database
-    \PDO::class => function () {
-        // Prefer keys from app/config/.env (.dist) then fallback to PRAT_DB_* if provided
-        $host = $_ENV['prat.host'] ?? $_ENV['PRAT_DB_HOST'] ?? 'toubiprati.db';
-        $port = (int)($_ENV['prat.port'] ?? $_ENV['PRAT_DB_PORT'] ?? 5432);
-        $db   = $_ENV['prat.database'] ?? $_ENV['PRAT_DB_NAME'] ?? 'toubiprat';
-        $user = $_ENV['prat.username'] ?? $_ENV['PRAT_DB_USER'] ?? 'toubiprat';
-        $pass = $_ENV['prat.password'] ?? $_ENV['PRAT_DB_PASS'] ?? 'toubiprat';
-        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $host, $port, $db);
-        $pdo = new \PDO($dsn, $user, $pass, [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-        ]);
-        return $pdo;
-    },
+// Load DI definitions from three files: settings, services, api
+$definitions = [];
+foreach (['settings', 'services', 'api'] as $file) {
+    $path = __DIR__ . '/di/' . $file . '.php';
+    if (file_exists($path)) {
+        /** @var array $defs */
+        $defs = require $path;
+        $definitions[] = $defs;
+    }
+}
 
-    // Repository binding
-    toubilib\core\application\ports\PraticienRepositoryInterface::class => DI\autowire(\toubilib\infra\repositories\PDOPraticienRepository::class),
-
-    // Service binding
-    toubilib\core\application\usecases\ServicePraticienInterface::class => DI\autowire(\toubilib\core\application\usecases\ServicePraticien::class),
-]);
+foreach ($definitions as $defs) {
+    $containerBuilder->addDefinitions($defs);
+}
 
 $container = $containerBuilder->build();
 AppFactory::setContainer($container);
