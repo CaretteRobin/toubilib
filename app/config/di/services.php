@@ -5,6 +5,10 @@ use toubilib\core\application\ports\PraticienRepositoryInterface;
 use toubilib\infra\repositories\PDOPraticienRepository;
 use toubilib\core\application\usecases\ServicePraticienInterface;
 use toubilib\core\application\usecases\ServicePraticien;
+use toubilib\core\application\ports\RdvRepositoryInterface;
+use toubilib\infra\repositories\PDORdvRepository;
+use toubilib\core\application\usecases\ServiceRDVInterface;
+use toubilib\core\application\usecases\ServiceRDV;
 
 return [
     // PDO connection factory
@@ -26,5 +30,22 @@ return [
     ServicePraticienInterface::class => function (ContainerInterface $c): ServicePraticienInterface {
         return new ServicePraticien($c->get(PraticienRepositoryInterface::class));
     },
-];
 
+    // RDV PDO connection
+    'pdo.rdv' => function (ContainerInterface $c): PDO {
+        $cfg = $c->get('db.rdv');
+        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $cfg['host'], $cfg['port'], $cfg['name']);
+        return new PDO($dsn, $cfg['user'], $cfg['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+    },
+
+    // RDV repository and service
+    RdvRepositoryInterface::class => function (ContainerInterface $c): RdvRepositoryInterface {
+        return new PDORdvRepository($c->get('pdo.rdv'));
+    },
+    ServiceRDVInterface::class => function (ContainerInterface $c): ServiceRDVInterface {
+        return new ServiceRDV($c->get(RdvRepositoryInterface::class));
+    },
+];
