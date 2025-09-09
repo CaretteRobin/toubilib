@@ -1,0 +1,84 @@
+networks:
+  toubilib.net:
+    driver: bridge
+
+services:
+  # service api.toubeelib : api pour la prise de rdv
+  #
+  api.toubilib:
+    build:
+      context: build
+      dockerfile: 8.4-cli.Dockerfile
+    ports:
+      - '6080:80'
+    volumes:
+      - ./app:/var/php
+    working_dir: /var/php
+    networks:
+      - toubilib.net
+    depends_on:
+      - toubiprati.db
+      - toubiauth.db
+      - toubipatient.db
+      - toubirdv.db
+    command: sh -c "composer install && php -S 0.0.0.0:80 -t /var/php/public"
+
+    # service toubiprat.db : base de données postgresql pour les praticiens
+
+  toubiprati.db:
+    image: 'postgres:latest'
+    env_file: ./toubipratdb.env
+    ports:
+      - '5432:5432'
+    networks:
+      - toubilib.net
+    volumes:
+      - ./sql/toubiprat.schema.sql:/docker-entrypoint-initdb.d/10_schema.sql:ro
+      - ./sql/toubiprat.data.sql:/docker-entrypoint-initdb.d/20_data.sql:ro
+
+
+  toubirdv.db:
+    image: 'postgres:latest'
+    env_file: ./toubirdvdb.env
+    ports:
+      - '5434:5432'
+    networks:
+      - toubilib.net
+    volumes:
+      - ./sql/toubirdv.schema.sql:/docker-entrypoint-initdb.d/10_schema.sql:ro
+      - ./sql/toubirdv.data.sql:/docker-entrypoint-initdb.d/20_data.sql:ro
+
+  # toubipatient.db : base de données patients
+  toubipatient.db:
+    image: 'postgres:latest'
+    env_file: ./toubipatientdb.env
+    ports:
+      - '5433:5432'
+    networks:
+      - toubilib.net
+    volumes:
+      - ./sql/toubipat.schema.sql:/docker-entrypoint-initdb.d/10_schema.sql:ro
+      - ./sql/toubipat.data.sql:/docker-entrypoint-initdb.d/20_data.sql:ro
+
+  # toubiauth.db : base de données authentification
+  toubiauth.db:
+    image: 'postgres:latest'
+    env_file: ./toubiauthdb.env
+    ports:
+      - '5435:5432'
+    networks:
+      - toubilib.net
+    volumes:
+      - ./sql/toubiauth.schema.sql:/docker-entrypoint-initdb.d/10_schema.sql:ro
+      - ./sql/toubiauth.data.sql:/docker-entrypoint-initdb.d/20_data.sql:ro
+
+
+  #
+  # service administration des bases sql
+  #
+  adminer:
+    image: adminer
+    ports:
+      - '8080:8080'
+    networks:
+      - toubilib.net
