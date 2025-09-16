@@ -1,0 +1,15 @@
+meta {
+  name: lister praticiens 
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:6080/praticiens
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
