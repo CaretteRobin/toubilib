@@ -13,7 +13,7 @@ interface ServicePraticienInterface
     /**
      * Retourne le détail d'un praticien par son identifiant.
      * @param string $id
-     * @return \toubilib\core\application\dto\PraticienDetailDTO|null
+     * @throws \toubilib\core\application\exceptions\ResourceNotFoundException
      */
-    public function afficherPraticien(string $id): ?\toubilib\core\application\dto\PraticienDetailDTO;
+    public function afficherPraticien(string $id): \toubilib\core\application\dto\PraticienDetailDTO;
 }

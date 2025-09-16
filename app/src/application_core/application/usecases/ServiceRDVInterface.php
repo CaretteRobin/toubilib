@@ -16,6 +16,7 @@ interface ServiceRDVInterface
 
     /**
      * Retourne un RDV par son identifiant.
+     * @throws \toubilib\core\application\exceptions\ResourceNotFoundException
      */
     public function consulterRdv(string $id): ?RdvDTO;
 
