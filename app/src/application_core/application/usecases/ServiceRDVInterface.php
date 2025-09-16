@@ -3,6 +3,7 @@
 namespace toubilib\core\application\usecases;
 
 use toubilib\core\application\dto\CreneauOccupeDTO;
+use toubilib\core\application\dto\InputRendezVousDTO;
 use toubilib\core\application\dto\RdvDTO;
 
 interface ServiceRDVInterface
@@ -17,5 +18,10 @@ interface ServiceRDVInterface
      * Retourne un RDV par son identifiant.
      * @throws \toubilib\core\application\exceptions\ResourceNotFoundException
      */
-    public function consulterRdv(string $id): RdvDTO;
+    public function consulterRdv(string $id): ?RdvDTO;
+
+    /**
+     * Crée un nouveau rendez-vous et retourne les informations persistées.
+     */
+    public function creerRendezVous(InputRendezVousDTO $dto): RdvDTO;
 }
