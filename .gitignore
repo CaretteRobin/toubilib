@@ -31,3 +31,4 @@ docker-compose.override.yml
 tmp/
 temp/
 .cache/
+*.env
