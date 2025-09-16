@@ -4,6 +4,7 @@ namespace toubilib\core\application\usecases;
 
 use toubilib\core\application\dto\PraticienDTO;
 use toubilib\core\application\dto\PraticienDetailDTO;
+use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\ports\PraticienRepositoryInterface;
 
 
@@ -32,10 +33,12 @@ class ServicePraticien implements ServicePraticienInterface
         return $dtos;
     }
 
-    public function afficherPraticien(string $id): ?PraticienDetailDTO
+    public function afficherPraticien(string $id): PraticienDetailDTO
     {
         $detail = $this->praticienRepository->findDetailById($id);
-        if ($detail === null) return null;
+        if ($detail === null) {
+            throw new ResourceNotFoundException(sprintf('Praticien %s introuvable', $id));
+        }
 
         $structure = null;
         if ($detail->structure) {

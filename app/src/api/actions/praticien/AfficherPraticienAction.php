@@ -5,9 +5,13 @@ namespace toubilib\api\actions\praticien;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Throwable;
+use toubilib\api\actions\AbstractAction;
+use toubilib\core\application\exceptions\ApplicationException;
+use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\usecases\ServicePraticienInterface;
 
-class AfficherPraticienAction
+class AfficherPraticienAction extends AbstractAction
 {
     private ServicePraticienInterface $service;
 
@@ -19,14 +23,16 @@ class AfficherPraticienAction
     public function __invoke(Request $request, Response $response, array $args): Response
     {
         $id = $args['id'] ?? '';
-        $dto = $this->service->afficherPraticien($id);
-        if ($dto === null) {
-            $response->getBody()->write(json_encode(['error' => 'Praticien non trouvé']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+
+        try {
+            $dto = $this->service->afficherPraticien($id);
+            return $this->respondWithJson($response, $dto);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->respondWithError($response, $exception->getMessage(), 404);
+        } catch (ApplicationException $exception) {
+            return $this->respondWithError($response, $exception->getMessage(), 400);
+        } catch (Throwable $exception) {
+            return $this->respondWithError($response, 'Une erreur interne est survenue.', 500);
         }
-        $payload = json_encode($dto, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $response->getBody()->write($payload);
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 }
-
