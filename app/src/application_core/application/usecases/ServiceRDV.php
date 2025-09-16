@@ -2,7 +2,6 @@
 
 namespace toubilib\core\application\usecases;
 
-use DateInterval;
 use DateTimeImmutable;
 use Ramsey\Uuid\Uuid;
 use toubilib\core\application\dto\CreneauOccupeDTO;
@@ -37,53 +36,48 @@ class ServiceRDV implements ServiceRDVInterface
         if (!$r) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
-        return new RdvDTO(
-            $r->id,
-            $r->praticien_id,
-            $r->patient_id,
-            $r->patient_email,
-            $r->date_heure_debut,
-            $r->status,
-            $r->duree,
-            $r->date_heure_fin,
-            $r->date_creation,
-            $r->motif_visite
-        );
+        return $this->mapToDto($r);
     }
 
     public function creerRendezVous(InputRendezVousDTO $dto): RdvDTO
     {
-        $id = Uuid::uuid4()->toString();
-        $debut = new DateTimeImmutable($dto->date_heure_debut);
-        $fin = $debut->add(new DateInterval('PT' . $dto->duree . 'M'));
-        $creation = new DateTimeImmutable();
+        $entity = $this->mapFromDto($dto);
+        $this->rdvRepository->save($entity);
 
-        $entity = new Rdv(
-            $id,
+        return $this->mapToDto($entity);
+    }
+
+    private function mapFromDto(InputRendezVousDTO $dto): Rdv
+    {
+        $dateDebut = (new DateTimeImmutable($dto->date_heure_debut))->format('Y-m-d H:i:s');
+
+        return new Rdv(
+            Uuid::uuid4()->toString(),
             $dto->praticien_id,
             $dto->patient_id,
             null,
-            $debut->format('Y-m-d H:i:s'),
-            0,
+            $dateDebut,
+            Rdv::STATUS_SCHEDULED,
             $dto->duree,
-            $fin->format('Y-m-d H:i:s'),
-            $creation->format('Y-m-d H:i:s'),
+            null,
+            null,
             $dto->motif_visite
         );
+    }
 
-        $this->rdvRepository->save($entity);
-
+    private function mapToDto(Rdv $rdv): RdvDTO
+    {
         return new RdvDTO(
-            $entity->id,
-            $entity->praticien_id,
-            $entity->patient_id,
-            $entity->patient_email,
-            $entity->date_heure_debut,
-            $entity->status,
-            $entity->duree,
-            $entity->date_heure_fin,
-            $entity->date_creation,
-            $entity->motif_visite
+            $rdv->id,
+            $rdv->praticien_id,
+            $rdv->patient_id,
+            $rdv->patient_email,
+            $rdv->date_heure_debut,
+            $rdv->status,
+            $rdv->duree,
+            $rdv->date_heure_fin,
+            $rdv->date_creation,
+            $rdv->motif_visite
         );
     }
 }
