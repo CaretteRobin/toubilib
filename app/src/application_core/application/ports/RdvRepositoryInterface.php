@@ -21,5 +21,9 @@ interface RdvRepositoryInterface
      * @return Rdv|null
      */
     public function findById(string $id): ?Rdv;
-}
 
+    /**
+     * Persiste un rendez-vous.
+     */
+    public function save(Rdv $rdv): void;
+}
