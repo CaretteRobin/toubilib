@@ -82,26 +82,4 @@ class PDORdvRepository implements RdvRepositoryInterface
             $r['motif_visite'] ?? null
         );
     }
-<<<<<<< Updated upstream
-
-    public function save(Rdv $rdv): void
-    {
-        $sql = 'INSERT INTO rdv (id, praticien_id, patient_id, patient_email, date_heure_debut, status, duree, date_heure_fin, date_creation, motif_visite)
-                VALUES (:id, :praticien_id, :patient_id, :patient_email, :date_heure_debut, :status, :duree, :date_heure_fin, :date_creation, :motif_visite)';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            ':id' => $rdv->id,
-            ':praticien_id' => $rdv->praticien_id,
-            ':patient_id' => $rdv->patient_id,
-            ':patient_email' => $rdv->patient_email,
-            ':date_heure_debut' => $rdv->date_heure_debut,
-            ':status' => $rdv->status,
-            ':duree' => $rdv->duree,
-            ':date_heure_fin' => $rdv->date_heure_fin,
-            ':date_creation' => $rdv->date_creation,
-            ':motif_visite' => $rdv->motif_visite,
-        ]);
-    }
-=======
->>>>>>> Stashed changes
 }
