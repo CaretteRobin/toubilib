@@ -5,9 +5,13 @@ namespace toubilib\api\actions\rdv;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Throwable;
+use toubilib\api\actions\AbstractAction;
+use toubilib\core\application\exceptions\ApplicationException;
+use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\usecases\ServiceRDVInterface;
 
-class ConsulterRdvAction
+class ConsulterRdvAction extends AbstractAction
 {
     private ServiceRDVInterface $service;
 
@@ -19,14 +23,16 @@ class ConsulterRdvAction
     public function __invoke(Request $request, Response $response, array $args): Response
     {
         $id = $args['id'] ?? '';
-        $dto = $this->service->consulterRdv($id);
-        if ($dto === null) {
-            $response->getBody()->write(json_encode(['error' => 'RDV non trouvé']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+
+        try {
+            $dto = $this->service->consulterRdv($id);
+            return $this->respondWithJson($response, $dto);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->respondWithError($response, $exception->getMessage(), 404);
+        } catch (ApplicationException $exception) {
+            return $this->respondWithError($response, $exception->getMessage(), 400);
+        } catch (Throwable $exception) {
+            return $this->respondWithError($response, 'Une erreur interne est survenue.', 500);
         }
-        $payload = json_encode($dto, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $response->getBody()->write($payload);
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 }
-

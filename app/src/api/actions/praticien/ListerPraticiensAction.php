@@ -5,9 +5,12 @@ namespace toubilib\api\actions\praticien;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Throwable;
+use toubilib\api\actions\AbstractAction;
+use toubilib\core\application\exceptions\ApplicationException;
 use toubilib\core\application\usecases\ServicePraticienInterface;
 
-class ListerPraticiensAction
+class ListerPraticiensAction extends AbstractAction
 {
     private ServicePraticienInterface $service;
 
@@ -18,12 +21,13 @@ class ListerPraticiensAction
 
     public function __invoke(Request $request, Response $response): Response
     {
-        $dtos = $this->service->listerPraticiens();
-        $payload = json_encode($dtos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $response->getBody()->write($payload);
-        return $response
-            ->withHeader('Content-Type', 'application/json')
-            ->withStatus(200);
+        try {
+            $dtos = $this->service->listerPraticiens();
+            return $this->respondWithJson($response, $dtos);
+        } catch (ApplicationException $exception) {
+            return $this->respondWithError($response, $exception->getMessage(), 400);
+        } catch (Throwable $exception) {
+            return $this->respondWithError($response, 'Une erreur interne est survenue.', 500);
+        }
     }
 }
-

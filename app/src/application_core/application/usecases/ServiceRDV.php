@@ -4,6 +4,7 @@ namespace toubilib\core\application\usecases;
 
 use toubilib\core\application\dto\CreneauOccupeDTO;
 use toubilib\core\application\dto\RdvDTO;
+use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\ports\RdvRepositoryInterface;
 
 class ServiceRDV implements ServiceRDVInterface
@@ -25,10 +26,12 @@ class ServiceRDV implements ServiceRDVInterface
         return $slots;
     }
 
-    public function consulterRdv(string $id): ?RdvDTO
+    public function consulterRdv(string $id): RdvDTO
     {
         $r = $this->rdvRepository->findById($id);
-        if (!$r) return null;
+        if (!$r) {
+            throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
+        }
         return new RdvDTO(
             $r->id,
             $r->praticien_id,
@@ -43,4 +46,3 @@ class ServiceRDV implements ServiceRDVInterface
         );
     }
 }
-
