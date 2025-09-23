@@ -4,23 +4,18 @@ namespace toubilib\core\application\dto;
 
 class InputRendezVousDTO
 {
-    public string $praticien_id;
-    public string $patient_id;
-    public string $date_heure_debut;
-    public string $motif_visite;
-    public int $duree;
+    public string $praticienId;
+    public string $patientId;
+    public string $dateHeureDebut; // ISO datetime string
+    public string $motifId;
+    public int $dureeMinutes;
 
-    public function __construct(
-        string $praticien_id,
-        string $patient_id,
-        string $date_heure_debut,
-        string $motif_visite,
-        int $duree
-    ) {
-        $this->praticien_id = $praticien_id;
-        $this->patient_id = $patient_id;
-        $this->date_heure_debut = $date_heure_debut;
-        $this->motif_visite = $motif_visite;
-        $this->duree = $duree;
+    public function __construct(string $praticienId, string $patientId, string $dateHeureDebut, string $motifId, int $dureeMinutes)
+    {
+        $this->praticienId = $praticienId;
+        $this->patientId = $patientId;
+        $this->dateHeureDebut = $dateHeureDebut;
+        $this->motifId = $motifId;
+        $this->dureeMinutes = $dureeMinutes;
     }
 }

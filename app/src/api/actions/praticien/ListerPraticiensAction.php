@@ -5,6 +5,8 @@ namespace toubilib\api\actions\praticien;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Exception\HttpBadRequestException;
+use Slim\Exception\HttpInternalServerErrorException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
 use toubilib\core\application\exceptions\ApplicationException;
@@ -25,9 +27,9 @@ class ListerPraticiensAction extends AbstractAction
             $dtos = $this->service->listerPraticiens();
             return $this->respondWithJson($response, $dtos);
         } catch (ApplicationException $exception) {
-            return $this->respondWithError($response, $exception->getMessage(), 400);
+            throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
         } catch (Throwable $exception) {
-            return $this->respondWithError($response, 'Une erreur interne est survenue.', 500);
+            throw new HttpInternalServerErrorException($request, 'Une erreur interne est survenue.', $exception);
         }
     }
 }

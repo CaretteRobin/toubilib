@@ -8,13 +8,17 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Exception\HttpUnprocessableEntityException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
+use toubilib\api\middlewares\CreateRendezVousMiddleware;
+use toubilib\core\application\dto\InputRendezVousDTO;
 use toubilib\core\application\exceptions\ApplicationException;
 use toubilib\core\application\exceptions\ResourceNotFoundException;
+use toubilib\core\application\exceptions\ValidationException;
 use toubilib\core\application\usecases\ServiceRDVInterface;
 
-class ConsulterRdvAction extends AbstractAction
+class CreerRdvAction extends AbstractAction
 {
     private ServiceRDVInterface $service;
 
@@ -23,13 +27,26 @@ class ConsulterRdvAction extends AbstractAction
         $this->service = $service;
     }
 
-    public function __invoke(Request $request, Response $response, array $args): Response
+    public function __invoke(Request $request, Response $response): Response
     {
-        $id = $args['id'] ?? '';
+        $payload = $request->getAttribute(CreateRendezVousMiddleware::ATTRIBUTE_PAYLOAD);
+        if (!is_array($payload)) {
+            throw new HttpBadRequestException($request, 'Données de rendez-vous manquantes.');
+        }
+
+        $dto = new InputRendezVousDTO(
+            $payload['praticien_id'],
+            $payload['patient_id'],
+            $payload['date_heure_debut'],
+            $payload['motif_id'],
+            $payload['duree']
+        );
 
         try {
-            $dto = $this->service->consulterRdv($id);
-            return $this->respondWithJson($response, $dto);
+            $rdv = $this->service->creerRendezVous($dto);
+            return $this->respondWithJson($response, $rdv, 201);
+        } catch (ValidationException $exception) {
+            throw new HttpUnprocessableEntityException($request, $exception->getMessage(), $exception);
         } catch (ResourceNotFoundException $exception) {
             throw new HttpNotFoundException($request, $exception->getMessage(), $exception);
         } catch (ApplicationException $exception) {

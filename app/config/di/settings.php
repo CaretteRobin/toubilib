@@ -20,4 +20,12 @@ return [
         'user' => $_ENV['rdv.username'] ?? 'toubirdv',
         'pass' => $_ENV['rdv.password'] ?? 'toubirdv',
     ],
+    // Database settings for patients DB
+    'db.pat' => [
+        'host' => $_ENV['pat.host'] ?? 'toubipatient.db',
+        'port' => (int)($_ENV['pat.port'] ?? 5432),
+        'name' => $_ENV['pat.database'] ?? 'toubipat',
+        'user' => $_ENV['pat.username'] ?? 'toubipat',
+        'pass' => $_ENV['pat.password'] ?? 'toubipat',
+    ],
 ];
