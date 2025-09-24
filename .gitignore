@@ -10,6 +10,10 @@
 Thumbs.db
 .idea/
 .vscode/
+.bruno/
+.git/
+.yarn/
+.cache/
 
 # Dépendances / artefacts
 vendor/
