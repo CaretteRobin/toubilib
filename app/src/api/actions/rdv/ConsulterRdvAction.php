@@ -35,7 +35,7 @@ class ConsulterRdvAction extends AbstractAction
         } catch (ApplicationException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
         } catch (Throwable $exception) {
-            throw new HttpInternalServerErrorException($request, 'Une erreur interne est survenue.', $exception);
+            throw new HttpInternalServerErrorException($request, $exception->getMessage(), $exception);
         }
     }
 }
