@@ -35,7 +35,17 @@ class ServiceRDV implements ServiceRDVInterface
 
     public function listerCreneauxOccupes(string $praticienId, string $dateDebut, string $dateFin): array
     {
-        $rdvs = $this->rdvRepository->findByPraticienBetween($praticienId, $dateDebut, $dateFin);
+        $this->getPraticienDetailOrFail($praticienId);
+
+        $debut = $this->parseDate($dateDebut);
+        $fin = $this->parseDate($dateFin);
+        $this->assertPeriodeChronologique($debut, $fin);
+
+        $rdvs = $this->rdvRepository->findByPraticienBetween(
+            $praticienId,
+            $debut->format('Y-m-d H:i:s'),
+            $fin->format('Y-m-d H:i:s')
+        );
         $slots = [];
         foreach ($rdvs as $rdv) {
             if ($rdv->isCancelled()) {
@@ -65,10 +75,7 @@ class ServiceRDV implements ServiceRDVInterface
         $this->assertDureeValide($dto->dureeMinutes);
         $fin = $debut->add(new DateInterval('PT' . $dto->dureeMinutes . 'M'));
 
-        $praticien = $this->praticienRepository->findDetailById($dto->praticienId);
-        if (!$praticien) {
-            throw new ResourceNotFoundException(sprintf('Praticien %s introuvable', $dto->praticienId));
-        }
+        $praticien = $this->getPraticienDetailOrFail($dto->praticienId);
 
         $patient = $this->patientRepository->findById($dto->patientId);
         if (!$patient) {
@@ -116,7 +123,17 @@ class ServiceRDV implements ServiceRDVInterface
 
     public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array
     {
-        $rdvs = $this->rdvRepository->findByPraticienBetween($praticienId, $dateDebut, $dateFin);
+        $this->getPraticienDetailOrFail($praticienId);
+
+        $debut = $this->parseDate($dateDebut);
+        $fin = $this->parseDate($dateFin);
+        $this->assertPeriodeChronologique($debut, $fin);
+
+        $rdvs = $this->rdvRepository->findByPraticienBetween(
+            $praticienId,
+            $debut->format('Y-m-d H:i:s'),
+            $fin->format('Y-m-d H:i:s')
+        );
         $agenda = [];
         foreach ($rdvs as $rdv) {
             $agenda[] = $this->mapToDto($rdv);
@@ -190,6 +207,13 @@ class ServiceRDV implements ServiceRDVInterface
         }
     }
 
+    private function assertPeriodeChronologique(DateTimeImmutable $debut, DateTimeImmutable $fin): void
+    {
+        if ($fin <= $debut) {
+            throw new ValidationException('La date de fin doit être postérieure à la date de début.');
+        }
+    }
+
     /**
      * @param array<int, mixed> $motifs
      */
@@ -202,5 +226,15 @@ class ServiceRDV implements ServiceRDVInterface
         }
 
         throw new ValidationException('Motif de visite invalide pour ce praticien.');
+    }
+
+    private function getPraticienDetailOrFail(string $praticienId)
+    {
+        $detail = $this->praticienRepository->findDetailById($praticienId);
+        if ($detail === null) {
+            throw new ResourceNotFoundException(sprintf('Praticien %s introuvable', $praticienId));
+        }
+
+        return $detail;
     }
 }
