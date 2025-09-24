@@ -5,6 +5,9 @@ namespace toubilib\api\actions\praticien;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Exception\HttpBadRequestException;
+use Slim\Exception\HttpInternalServerErrorException;
+use Slim\Exception\HttpNotFoundException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
 use toubilib\core\application\exceptions\ApplicationException;
@@ -28,11 +31,11 @@ class AfficherPraticienAction extends AbstractAction
             $dto = $this->service->afficherPraticien($id);
             return $this->respondWithJson($response, $dto);
         } catch (ResourceNotFoundException $exception) {
-            return $this->respondWithError($response, $exception->getMessage(), 404);
+            throw new HttpNotFoundException($request, $exception->getMessage(), $exception);
         } catch (ApplicationException $exception) {
-            return $this->respondWithError($response, $exception->getMessage(), 400);
+            throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
         } catch (Throwable $exception) {
-            return $this->respondWithError($response, 'Une erreur interne est survenue.', 500);
+            throw new HttpInternalServerErrorException($request, 'Une erreur interne est survenue.', $exception);
         }
     }
 }

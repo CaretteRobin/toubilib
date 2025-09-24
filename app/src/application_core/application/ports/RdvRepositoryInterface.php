@@ -18,19 +18,13 @@ interface RdvRepositoryInterface
     public function findById(string $id): ?Rdv;
 
     /**
-<<<<<<< Updated upstream
-     * Persiste un rendez-vous.
-     */
-    public function save(Rdv $rdv): void;
-=======
      * Persiste un rendez-vous (insert ou update).
      */
     public function save(Rdv $rdv): void;
 
     /**
-     * Retourne la liste des RDV qui se chevauchent la période [de, a[.
+     * Retourne la liste des RDV qui se chevauchent avec la période [de, a[.
      * @return Rdv[]
      */
     public function findOverlapping(string $praticienId, string $de, string $a): array;
->>>>>>> Stashed changes
 }

@@ -1,6 +1,10 @@
 <?php
 namespace toubilib\core\domain\entities\rdv;
 
+use DateInterval;
+use DateTimeImmutable;
+use toubilib\core\domain\exceptions\DomainException;
+
 class Rdv
 {
     public const STATUS_SCHEDULED = 0;
@@ -38,19 +42,38 @@ class Rdv
         $this->status = $status ?? self::STATUS_SCHEDULED;
         $this->duree = $duree;
         $this->date_heure_fin = $date_heure_fin ?? self::computeFin($date_heure_debut, $duree);
-        $this->date_creation = $date_creation ?? (new \DateTimeImmutable('now'))->format('Y-m-d H:i:s');
+        $this->date_creation = $date_creation ?? (new DateTimeImmutable('now'))->format('Y-m-d H:i:s');
         $this->motif_visite = $motif_visite;
     }
 
     public static function computeFin(string $dateDebut, int $duree): string
     {
-        $dt = new \DateTimeImmutable($dateDebut);
-        $dt = $dt->add(new \DateInterval('PT' . (int)$duree . 'M'));
+        $dt = new DateTimeImmutable($dateDebut);
+        $dt = $dt->add(new DateInterval('PT' . (int)$duree . 'M'));
         return $dt->format('Y-m-d H:i:s');
     }
 
-    public function cancel(?string $reason = null): void
+    public function getDateHeureDebut(): DateTimeImmutable
     {
+        return new DateTimeImmutable($this->date_heure_debut);
+    }
+
+    public function getDateHeureFin(): DateTimeImmutable
+    {
+        return new DateTimeImmutable($this->date_heure_fin ?? self::computeFin($this->date_heure_debut, $this->duree));
+    }
+
+    public function cancel(): void
+    {
+        if ($this->isCancelled()) {
+            throw new DomainException('Le rendez-vous est déjà annulé.');
+        }
+
+        $now = new DateTimeImmutable('now');
+        if ($this->getDateHeureDebut() <= $now) {
+            throw new DomainException('Impossible d\'annuler un rendez-vous passé ou en cours.');
+        }
+
         $this->status = self::STATUS_CANCELLED;
     }
 
@@ -66,10 +89,10 @@ class Rdv
 
     public function overlapsWith(Rdv $other): bool
     {
-        $startA = new \DateTimeImmutable($this->date_heure_debut);
-        $endA = new \DateTimeImmutable($this->date_heure_fin);
-        $startB = new \DateTimeImmutable($other->date_heure_debut);
-        $endB = new \DateTimeImmutable($other->date_heure_fin);
+        $startA = $this->getDateHeureDebut();
+        $endA = $this->getDateHeureFin();
+        $startB = $other->getDateHeureDebut();
+        $endB = $other->getDateHeureFin();
         return ($startA < $endB) && ($startB < $endA);
     }
 }

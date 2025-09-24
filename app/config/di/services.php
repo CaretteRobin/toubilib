@@ -9,6 +9,8 @@ use toubilib\core\application\ports\RdvRepositoryInterface;
 use toubilib\infra\repositories\PDORdvRepository;
 use toubilib\core\application\usecases\ServiceRDVInterface;
 use toubilib\core\application\usecases\ServiceRDV;
+use toubilib\core\application\ports\PatientRepositoryInterface;
+use toubilib\infra\repositories\PDOPatientRepository;
 
 return [
     // PDO connection factory
@@ -41,11 +43,29 @@ return [
         ]);
     },
 
+    // Patient PDO connection
+    'pdo.pat' => function (ContainerInterface $c): PDO {
+        $cfg = $c->get('db.pat');
+        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $cfg['host'], $cfg['port'], $cfg['name']);
+        return new PDO($dsn, $cfg['user'], $cfg['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+    },
+
     // RDV repository and service
     RdvRepositoryInterface::class => function (ContainerInterface $c): RdvRepositoryInterface {
         return new PDORdvRepository($c->get('pdo.rdv'));
     },
     ServiceRDVInterface::class => function (ContainerInterface $c): ServiceRDVInterface {
-        return new ServiceRDV($c->get(RdvRepositoryInterface::class));
+        return new ServiceRDV(
+            $c->get(RdvRepositoryInterface::class),
+            $c->get(PraticienRepositoryInterface::class),
+            $c->get(PatientRepositoryInterface::class)
+        );
+    },
+
+    PatientRepositoryInterface::class => function (ContainerInterface $c): PatientRepositoryInterface {
+        return new PDOPatientRepository($c->get('pdo.pat'));
     },
 ];
