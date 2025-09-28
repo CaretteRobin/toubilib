@@ -8,7 +8,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpNotFoundException;
-use Slim\Exception\HttpUnprocessableEntityException;
+use toubilib\api\exceptions\HttpUnprocessableEntityException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
 use toubilib\api\middlewares\CreateRendezVousMiddleware;

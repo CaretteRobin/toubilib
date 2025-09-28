@@ -19,7 +19,7 @@ class PDORdvRepository implements RdvRepositoryInterface
         $sql = $this->baseSelect()
             . ' WHERE praticien_id = :pid'
             . '   AND date_heure_debut < :fin'
-            . '   AND fin_calc > :debut'
+            . "   AND COALESCE(date_heure_fin, date_heure_debut + (duree || ' minutes')::interval) > :debut"
             . ' ORDER BY date_heure_debut ASC';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':pid' => $praticienId, ':fin' => $a, ':debut' => $de]);
@@ -32,7 +32,7 @@ class PDORdvRepository implements RdvRepositoryInterface
         $sql = $this->baseSelect()
             . ' WHERE praticien_id = :pid'
             . '   AND date_heure_debut < :fin'
-            . '   AND fin_calc > :debut'
+            . "   AND COALESCE(date_heure_fin, date_heure_debut + (duree || ' minutes')::interval) > :debut"
             . ' ORDER BY date_heure_debut ASC';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':pid' => $praticienId, ':fin' => $a, ':debut' => $de]);
@@ -51,18 +51,15 @@ class PDORdvRepository implements RdvRepositoryInterface
 
     public function save(Rdv $rdv): void
     {
-        $sql = 'INSERT INTO rdv (id, praticien_id, patient_id, patient_email, date_heure_debut, status, duree, date_heure_fin, date_creation, motif_visite)'
-             . ' VALUES (:id, :praticien_id, :patient_id, :patient_email, :date_heure_debut, :status, :duree, :date_heure_fin, :date_creation, :motif_visite)'
-             . ' ON CONFLICT (id) DO UPDATE SET'
-             . ' praticien_id = EXCLUDED.praticien_id,'
-             . ' patient_id = EXCLUDED.patient_id,'
-             . ' patient_email = EXCLUDED.patient_email,'
-             . ' date_heure_debut = EXCLUDED.date_heure_debut,'
-             . ' status = EXCLUDED.status,'
-             . ' duree = EXCLUDED.duree,'
-             . ' date_heure_fin = EXCLUDED.date_heure_fin,'
-             . ' date_creation = EXCLUDED.date_creation,'
-             . ' motif_visite = EXCLUDED.motif_visite';
+        $existing = $this->findById($rdv->id);
+        if ($existing === null) {
+            $sql = 'INSERT INTO rdv (id, praticien_id, patient_id, patient_email, date_heure_debut, status, duree, date_heure_fin, date_creation, motif_visite)'
+                 . ' VALUES (:id, :praticien_id, :patient_id, :patient_email, :date_heure_debut, :status, :duree, :date_heure_fin, :date_creation, :motif_visite)';
+        } else {
+            $sql = 'UPDATE rdv SET praticien_id = :praticien_id, patient_id = :patient_id, patient_email = :patient_email,'
+                 . ' date_heure_debut = :date_heure_debut, status = :status, duree = :duree, date_heure_fin = :date_heure_fin,'
+                 . ' date_creation = :date_creation, motif_visite = :motif_visite WHERE id = :id';
+        }
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
