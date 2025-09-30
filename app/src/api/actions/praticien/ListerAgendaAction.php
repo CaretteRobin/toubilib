@@ -6,6 +6,7 @@ namespace toubilib\api\actions\praticien;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Respect\Validation\Validator as v;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpNotFoundException;
@@ -29,6 +30,10 @@ class ListerAgendaAction extends AbstractAction
         $id = $args['id'] ?? '';
         if ($id === '') {
             throw new HttpBadRequestException($request, 'Identifiant praticien manquant.');
+        }
+
+        if (!Uuid::isValid($id)) {
+            throw new HttpBadRequestException($request, 'Identifiant praticien invalide.');
         }
 
         $query = $request->getQueryParams();

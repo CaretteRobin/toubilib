@@ -35,10 +35,10 @@ class CreateRendezVousMiddleware implements MiddlewareInterface
     private function validate(array $data): array
     {
         $schema = Validator::arrayType()
-            ->key('praticien_id', Validator::stringType()->notEmpty())
-            ->key('patient_id', Validator::stringType()->notEmpty())
-            ->key('motif_id', Validator::stringType()->notEmpty())
-            ->key('date_heure_debut', Validator::date('Y-m-d H:i:s'))
+            ->key('praticien_id', Validator::uuid())
+            ->key('patient_id', Validator::uuid())
+            ->key('motif_id', Validator::digit()->positive())
+            ->key('date_heure_debut', Validator::dateTime('Y-m-d H:i:s'))
             ->key('duree', Validator::intType()->positive());
 
         try {

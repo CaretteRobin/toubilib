@@ -5,10 +5,11 @@ namespace toubilib\api\actions\rdv;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpNotFoundException;
-use Slim\Exception\HttpConflictException;
+use toubilib\api\exceptions\HttpConflictException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
 use toubilib\core\application\exceptions\ApplicationException;
@@ -31,6 +32,10 @@ class AnnulerRdvAction extends AbstractAction
 
         if ($id === '') {
             throw new HttpBadRequestException($request, 'Identifiant de rendez-vous manquant.');
+        }
+
+        if (!Uuid::isValid($id)) {
+            throw new HttpBadRequestException($request, 'Identifiant de rendez-vous invalide.');
         }
 
         try {

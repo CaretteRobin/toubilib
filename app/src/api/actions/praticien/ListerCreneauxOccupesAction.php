@@ -6,6 +6,7 @@ namespace toubilib\api\actions\praticien;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Respect\Validation\Validator as v;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
 use Throwable;
@@ -28,6 +29,10 @@ class ListerCreneauxOccupesAction extends AbstractAction
         $query = $request->getQueryParams();
         $de = $query['de'] ?? null;
         $a = $query['a'] ?? null;
+
+        if (!Uuid::isValid($id)) {
+            throw new HttpBadRequestException($request, 'Identifiant praticien invalide.');
+        }
 
         $dateRule = v::date('Y-m-d');
         if (!$de || !$a || !$dateRule->validate($de) || !$dateRule->validate($a)) {

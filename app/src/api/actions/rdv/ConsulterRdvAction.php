@@ -5,6 +5,7 @@ namespace toubilib\api\actions\rdv;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpNotFoundException;
@@ -26,6 +27,10 @@ class ConsulterRdvAction extends AbstractAction
     public function __invoke(Request $request, Response $response, array $args): Response
     {
         $id = $args['id'] ?? '';
+
+        if (!Uuid::isValid($id)) {
+            throw new HttpBadRequestException($request, 'Identifiant de rendez-vous invalide.');
+        }
 
         try {
             $dto = $this->service->consulterRdv($id);
