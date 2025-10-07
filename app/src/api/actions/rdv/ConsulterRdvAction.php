@@ -34,7 +34,8 @@ class ConsulterRdvAction extends AbstractAction
 
         try {
             $dto = $this->service->consulterRdv($id);
-            return $this->respondWithJson($response, $dto);
+            $payload = ['data' => $this->rdvResource($request, $dto)];
+            return $this->respondWithJson($response, $payload);
         } catch (ResourceNotFoundException $exception) {
             throw new HttpNotFoundException($request, $exception->getMessage(), $exception);
         } catch (ApplicationException $exception) {

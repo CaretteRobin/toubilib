@@ -43,7 +43,25 @@ class ListerCreneauxOccupesAction extends AbstractAction
 
         try {
             $slots = $this->service->listerCreneauxOccupes($id, $start, $end);
-            return $this->respondWithJson($response, $slots);
+            $items = array_map(static function ($dto) {
+                $attributes = $dto->jsonSerialize();
+                return [
+                    'type' => 'creneau_occupe',
+                    'attributes' => $attributes,
+                ];
+            }, $slots);
+
+            $self = (string)$request->getUri();
+            $payload = [
+                'data' => $items,
+                '_links' => [
+                    'self' => ['href' => $self, 'method' => 'GET'],
+                    'praticien' => ['href' => '/praticiens/' . $id, 'method' => 'GET'],
+                    'agenda' => ['href' => '/praticiens/' . $id . '/agenda?de=' . $de . '&a=' . $a, 'method' => 'GET'],
+                ],
+            ];
+
+            return $this->respondWithJson($response, $payload);
         } catch (ApplicationException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
         } catch (Throwable $exception) {

@@ -59,7 +59,18 @@ class ListerAgendaAction extends AbstractAction
 
         try {
             $agenda = $this->service->listerAgenda($id, $debut, $fin);
-            return $this->respondWithJson($response, $agenda);
+            $items = array_map(fn($rdv) => $this->rdvResource($request, $rdv), $agenda);
+            $self = (string)$request->getUri();
+            $payload = [
+                'data' => $items,
+                '_links' => [
+                    'self' => ['href' => $self, 'method' => 'GET'],
+                    'praticien' => ['href' => '/praticiens/' . $id, 'method' => 'GET'],
+                    'creer_rdv' => ['href' => '/rdv', 'method' => 'POST'],
+                ],
+            ];
+
+            return $this->respondWithJson($response, $payload);
         } catch (ResourceNotFoundException $exception) {
             throw new HttpNotFoundException($request, $exception->getMessage(), $exception);
         } catch (ValidationException $exception) {
