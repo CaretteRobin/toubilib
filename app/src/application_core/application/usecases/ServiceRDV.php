@@ -105,7 +105,7 @@ class ServiceRDV implements ServiceRDVInterface
         return $this->mapToDto($rdv);
     }
 
-    public function annulerRendezVous(string $id): void
+    public function annulerRendezVous(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
         if (!$rdv) {
@@ -119,6 +119,7 @@ class ServiceRDV implements ServiceRDVInterface
         }
 
         $this->rdvRepository->save($rdv);
+        return $this->mapToDto($rdv);
     }
 
     public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array
@@ -139,6 +140,40 @@ class ServiceRDV implements ServiceRDVInterface
             $agenda[] = $this->mapToDto($rdv);
         }
         return $agenda;
+    }
+
+    public function honorerRendezVous(string $id): RdvDTO
+    {
+        $rdv = $this->rdvRepository->findById($id);
+        if (!$rdv) {
+            throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
+        }
+
+        try {
+            $rdv->markHonored();
+        } catch (DomainException $exception) {
+            throw new ValidationException($exception->getMessage(), previous: $exception);
+        }
+
+        $this->rdvRepository->save($rdv);
+        return $this->mapToDto($rdv);
+    }
+
+    public function marquerRendezVousAbsent(string $id): RdvDTO
+    {
+        $rdv = $this->rdvRepository->findById($id);
+        if (!$rdv) {
+            throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
+        }
+
+        try {
+            $rdv->markNoShow();
+        } catch (DomainException $exception) {
+            throw new ValidationException($exception->getMessage(), previous: $exception);
+        }
+
+        $this->rdvRepository->save($rdv);
+        return $this->mapToDto($rdv);
     }
 
     private function mapToDto(Rdv $rdv): RdvDTO

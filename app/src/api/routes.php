@@ -10,6 +10,7 @@ use toubilib\api\actions\praticien\ListerAgendaAction;
 use toubilib\api\actions\rdv\ConsulterRdvAction;
 use toubilib\api\actions\rdv\CreerRdvAction;
 use toubilib\api\actions\rdv\AnnulerRdvAction;
+use toubilib\api\actions\rdv\ModifierStatutRdvAction;
 use toubilib\api\middlewares\CreateRendezVousMiddleware;
 
 return function( \Slim\App $app):\Slim\App {
@@ -28,5 +29,7 @@ return function( \Slim\App $app):\Slim\App {
         ->add(CreateRendezVousMiddleware::class);
     // DELETE /rdv/{id}: annuler un rendez-vous
     $app->delete('/rdv/{id}', AnnulerRdvAction::class);
+    // PATCH /rdv/{id}: honorer / marquer absent
+    $app->patch('/rdv/{id}', ModifierStatutRdvAction::class);
     return $app;
 };

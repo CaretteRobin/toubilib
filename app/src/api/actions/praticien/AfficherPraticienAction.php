@@ -34,7 +34,24 @@ class AfficherPraticienAction extends AbstractAction
 
         try {
             $dto = $this->service->afficherPraticien($id);
-            return $this->respondWithJson($response, $dto);
+            $data = $dto->jsonSerialize();
+            $attributes = $data;
+            unset($attributes['id']);
+
+            $payload = [
+                'data' => [
+                    'id' => $dto->id,
+                    'type' => 'praticien',
+                    'attributes' => $attributes,
+                    '_links' => [
+                        'self' => ['href' => '/praticiens/' . $dto->id, 'method' => 'GET'],
+                        'rdv_occupes' => ['href' => '/praticiens/' . $dto->id . '/rdv/occupes', 'method' => 'GET'],
+                        'agenda' => ['href' => '/praticiens/' . $dto->id . '/agenda', 'method' => 'GET'],
+                    ],
+                ],
+            ];
+
+            return $this->respondWithJson($response, $payload);
         } catch (ResourceNotFoundException $exception) {
             throw new HttpNotFoundException($request, $exception->getMessage(), $exception);
         } catch (ApplicationException $exception) {

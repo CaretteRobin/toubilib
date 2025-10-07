@@ -32,11 +32,25 @@ interface ServiceRDVInterface
      * @throws \toubilib\core\application\exceptions\ResourceNotFoundException
      * @throws \toubilib\core\application\exceptions\ValidationException
      */
-    public function annulerRendezVous(string $id): void;
+    public function annulerRendezVous(string $id): RdvDTO;
 
     /**
      * Retourne l'agenda d'un praticien sur une période.
      * @return RdvDTO[]
      */
     public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array;
+
+    /**
+     * Marque un rendez-vous comme honoré.
+     * @throws \toubilib\core\application\exceptions\ResourceNotFoundException
+     * @throws \toubilib\core\application\exceptions\ValidationException
+     */
+    public function honorerRendezVous(string $id): RdvDTO;
+
+    /**
+     * Marque un rendez-vous comme non honoré (patient absent).
+     * @throws \toubilib\core\application\exceptions\ResourceNotFoundException
+     * @throws \toubilib\core\application\exceptions\ValidationException
+     */
+    public function marquerRendezVousAbsent(string $id): RdvDTO;
 }

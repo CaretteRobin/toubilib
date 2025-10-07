@@ -10,6 +10,7 @@ class Rdv
     public const STATUS_SCHEDULED = 0;
     public const STATUS_CANCELLED = 1;
     public const STATUS_COMPLETED = 2;
+    public const STATUS_NO_SHOW = 3;
 
     public string $id;
     public string $praticien_id;
@@ -80,6 +81,22 @@ class Rdv
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function markHonored(): void
+    {
+        if ($this->isCancelled()) {
+            throw new DomainException('Impossible d\'honorer un rendez-vous annulé.');
+        }
+        $this->status = self::STATUS_COMPLETED;
+    }
+
+    public function markNoShow(): void
+    {
+        if ($this->isCancelled()) {
+            throw new DomainException('Impossible de marquer absent un rendez-vous annulé.');
+        }
+        $this->status = self::STATUS_NO_SHOW;
     }
 
     public function setStatus(int $status): void

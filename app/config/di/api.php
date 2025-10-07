@@ -9,6 +9,7 @@ use toubilib\api\actions\praticien\ListerAgendaAction;
 use toubilib\api\actions\rdv\ConsulterRdvAction;
 use toubilib\api\actions\rdv\CreerRdvAction;
 use toubilib\api\actions\rdv\AnnulerRdvAction;
+use toubilib\api\actions\rdv\ModifierStatutRdvAction;
 use toubilib\api\middlewares\CreateRendezVousMiddleware;
 use toubilib\core\application\usecases\ServiceRDVInterface;
 
@@ -33,6 +34,9 @@ return [
     },
     AnnulerRdvAction::class => function (ContainerInterface $c): AnnulerRdvAction {
         return new AnnulerRdvAction($c->get(ServiceRDVInterface::class));
+    },
+    ModifierStatutRdvAction::class => function (ContainerInterface $c): ModifierStatutRdvAction {
+        return new ModifierStatutRdvAction($c->get(ServiceRDVInterface::class));
     },
     CreateRendezVousMiddleware::class => function (): CreateRendezVousMiddleware {
         return new CreateRendezVousMiddleware();

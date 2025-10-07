@@ -23,6 +23,7 @@ class ServicePraticien implements ServicePraticienInterface
         $dtos = [];
         foreach ($entities as $p) {
             $dtos[] = new PraticienDTO(
+                $p->id,
                 $p->nom,
                 $p->prenom,
                 $p->ville,

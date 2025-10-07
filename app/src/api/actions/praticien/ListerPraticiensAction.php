@@ -25,7 +25,12 @@ class ListerPraticiensAction extends AbstractAction
     {
         try {
             $dtos = $this->service->listerPraticiens();
-            return $this->respondWithJson($response, $dtos);
+            $resources = array_map(fn($dto) => $this->praticienResource($request, $dto), $dtos);
+            $payload = [
+                'data' => $resources,
+                '_links' => $this->collectionLinks((string)$request->getUri()),
+            ];
+            return $this->respondWithJson($response, $payload);
         } catch (ApplicationException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
         } catch (Throwable $exception) {

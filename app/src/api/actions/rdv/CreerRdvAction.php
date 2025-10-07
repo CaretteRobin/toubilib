@@ -44,7 +44,10 @@ class CreerRdvAction extends AbstractAction
 
         try {
             $rdv = $this->service->creerRendezVous($dto);
-            return $this->respondWithJson($response, $rdv, 201);
+            $resource = ['data' => $this->rdvResource($request, $rdv)];
+            $location = '/rdv/' . $rdv->id;
+            return $this->respondWithJson($response, $resource, 201)
+                ->withHeader('Location', $location);
         } catch (ValidationException $exception) {
             throw new HttpUnprocessableEntityException($request, $exception->getMessage(), $exception);
         } catch (ResourceNotFoundException $exception) {
