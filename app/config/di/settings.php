@@ -28,4 +28,15 @@ return [
         'user' => $_ENV['pat.username'] ?? 'toubipat',
         'pass' => $_ENV['pat.password'] ?? 'toubipat',
     ],
+    // Database settings for auth DB
+    'db.auth' => [
+        'host' => $_ENV['auth.host'] ?? 'toubiauth.db',
+        'port' => (int)($_ENV['auth.port'] ?? 5432),
+        'name' => $_ENV['auth.database'] ?? 'toubiauth',
+        'user' => $_ENV['auth.username'] ?? 'toubiauth',
+        'pass' => $_ENV['auth.password'] ?? 'toubiauth',
+    ],
+    // Auth settings
+    'auth.jwt.secret' => $_ENV['AUTH_JWT_SECRET'] ?? 'your-super-secret-jwt-key-change-in-production',
+    'auth.jwt.expiration' => (int)($_ENV['AUTH_JWT_EXPIRATION'] ?? 3600), // 1 hour by default
 ];

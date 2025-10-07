@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true"
+         testdox="true">
+    <testsuites>
+        <testsuite name="Auth Tests">
+            <directory>test/Auth</directory>
+        </testsuite>
+    </testsuites>
+    <coverage>
+        <include>
+            <directory suffix=".php">src/application_core/domain/entities/user</directory>
+            <directory suffix=".php">src/application_core/application/usecases</directory>
+            <directory suffix=".php">src/infrastructure/repositories</directory>
+        </include>
+    </coverage>
+</phpunit>
