@@ -8,6 +8,7 @@ use Exception;
 use Ramsey\Uuid\Uuid;
 use toubilib\core\application\dto\CreneauOccupeDTO;
 use toubilib\core\application\dto\InputRendezVousDTO;
+use toubilib\core\application\dto\PraticienDetailDTO;
 use toubilib\core\application\dto\RdvDTO;
 use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\exceptions\ValidationException;
@@ -15,6 +16,8 @@ use toubilib\core\application\ports\PatientRepositoryInterface;
 use toubilib\core\application\ports\PraticienRepositoryInterface;
 use toubilib\core\application\ports\RdvRepositoryInterface;
 use toubilib\core\domain\entities\rdv\Rdv;
+use toubilib\core\domain\entities\praticien\PraticienDetail;
+use toubilib\core\application\security\CurrentUserContext; // Service à créer qui représente l'utilisateur authentifié
 use toubilib\core\domain\exceptions\DomainException;
 
 class ServiceRDV implements ServiceRDVInterface
@@ -22,15 +25,18 @@ class ServiceRDV implements ServiceRDVInterface
     private RdvRepositoryInterface $rdvRepository;
     private PraticienRepositoryInterface $praticienRepository;
     private PatientRepositoryInterface $patientRepository;
+    private CurrentUserContext $currentUser;
 
     public function __construct(
         RdvRepositoryInterface $rdvRepository,
         PraticienRepositoryInterface $praticienRepository,
-        PatientRepositoryInterface $patientRepository
+        PatientRepositoryInterface $patientRepository,
+        CurrentUserContext $currentUser // Injecter le contexte de l'utilisateur courant
     ) {
         $this->rdvRepository = $rdvRepository;
         $this->praticienRepository = $praticienRepository;
         $this->patientRepository = $patientRepository;
+        $this->currentUser = $currentUser;
     }
 
     public function listerCreneauxOccupes(string $praticienId, string $dateDebut, string $dateFin): array
@@ -77,9 +83,12 @@ class ServiceRDV implements ServiceRDVInterface
 
         $praticien = $this->getPraticienDetailOrFail($dto->praticienId);
 
-        $patient = $this->patientRepository->findById($dto->patientId);
+        // Le patientId n'est plus fourni par le DTO, mais par l'utilisateur authentifié.
+        $patientId = $this->currentUser->getId();
+
+        $patient = $this->patientRepository->findById($patientId);
         if (!$patient) {
-            throw new ResourceNotFoundException(sprintf('Patient %s introuvable', $dto->patientId));
+            throw new ResourceNotFoundException(sprintf('Patient %s introuvable', $patientId));
         }
 
         $motif = $this->resolveMotif($dto->motifId, $praticien->motifs);
@@ -90,7 +99,7 @@ class ServiceRDV implements ServiceRDVInterface
         $rdv = new Rdv(
             Uuid::uuid4()->toString(),
             $dto->praticienId,
-            $dto->patientId,
+            $patientId,
             $patient->email,
             $debut->format('Y-m-d H:i:s'),
             Rdv::STATUS_SCHEDULED,
@@ -108,6 +117,9 @@ class ServiceRDV implements ServiceRDVInterface
     public function annulerRendezVous(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
+        // TODO: Ajouter la vérification des permissions (ACL)
+        // $this->currentUser->assertCanCancel($rdv);
+
         if (!$rdv) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
@@ -122,9 +134,13 @@ class ServiceRDV implements ServiceRDVInterface
         return $this->mapToDto($rdv);
     }
 
-    public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array
+    public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array // TODO: Sécuriser, seul le praticien concerné peut voir son agenda
     {
+        // Vérification des permissions : le praticien ne peut voir que son propre agenda.
+        $this->currentUser->assertIsPraticien($praticienId);
+
         $this->getPraticienDetailOrFail($praticienId);
+
 
         $debut = $this->parseDate($dateDebut);
         $fin = $this->parseDate($dateFin);
@@ -145,6 +161,9 @@ class ServiceRDV implements ServiceRDVInterface
     public function honorerRendezVous(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
+        // TODO: Ajouter la vérification des permissions (ACL)
+        // $this->currentUser->assertCanManage($rdv);
+
         if (!$rdv) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
@@ -162,6 +181,9 @@ class ServiceRDV implements ServiceRDVInterface
     public function marquerRendezVousAbsent(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
+        // TODO: Ajouter la vérification des permissions (ACL)
+        // $this->currentUser->assertCanManage($rdv);
+
         if (!$rdv) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
@@ -263,7 +285,7 @@ class ServiceRDV implements ServiceRDVInterface
         throw new ValidationException('Motif de visite invalide pour ce praticien.');
     }
 
-    private function getPraticienDetailOrFail(string $praticienId)
+    private function getPraticienDetailOrFail(string $praticienId): PraticienDetail
     {
         $detail = $this->praticienRepository->findDetailById($praticienId);
         if ($detail === null) {
