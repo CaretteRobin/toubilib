@@ -17,15 +17,18 @@ class ServiceAuth implements ServiceAuthInterface
     private UserRepositoryInterface $userRepository;
     private string $jwtSecret;
     private int $jwtExpiration;
+    private int $jwtRefreshExpiration;
 
     public function __construct(
         UserRepositoryInterface $userRepository,
         string $jwtSecret,
-        int $jwtExpiration = 3600 // 1 heure par défaut
+        int $jwtExpiration = 3600,
+        int $jwtRefreshExpiration = 604800
     ) {
         $this->userRepository = $userRepository;
         $this->jwtSecret = $jwtSecret;
         $this->jwtExpiration = $jwtExpiration;
+        $this->jwtRefreshExpiration = $jwtRefreshExpiration;
     }
 
     public function authenticate(string $email, string $password): UserDTO
@@ -57,25 +60,29 @@ class ServiceAuth implements ServiceAuthInterface
         return UserDTO::fromEntity($user);
     }
 
-    public function generateJwtToken(UserDTO $user): string
+    public function generateJwtToken(UserDTO $user, string $type = 'access'): string
     {
+        $ttl = $this->getTokenTtl($type);
         $payload = [
             'iss' => 'toubilib',                    // Issuer
             'iat' => time(),                        // Issued at
-            'exp' => time() + $this->jwtExpiration, // Expiration
+            'exp' => time() + $ttl, // Expiration
             'sub' => $user->id,                     // Subject (user ID)
             'email' => $user->email,
-            'role' => $user->role
+            'role' => $user->role,
+            'type' => $type,
         ];
 
         return JWT::encode($payload, $this->jwtSecret, 'HS256');
     }
 
-    public function verifyJwtToken(string $token): UserDTO
+    public function verifyJwtToken(string $token, string $expectedType = 'access'): UserDTO
     {
         try {
             $decoded = JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
-            
+            if (!isset($decoded->type) || $decoded->type !== $expectedType) {
+                throw new InvalidCredentialsException();
+            }
             // Vérifier que l'utilisateur existe toujours
             $user = $this->getUserById($decoded->sub);
             
@@ -83,6 +90,11 @@ class ServiceAuth implements ServiceAuthInterface
         } catch (\Exception $e) {
             throw new InvalidCredentialsException();
         }
+    }
+
+    public function getTokenTtl(string $type = 'access'): int
+    {
+        return $type === 'refresh' ? $this->jwtRefreshExpiration : $this->jwtExpiration;
     }
 
     /**

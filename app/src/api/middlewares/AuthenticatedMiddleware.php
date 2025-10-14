@@ -32,7 +32,7 @@ class AuthenticatedMiddleware implements MiddlewareInterface
         $token = $matches[1];
 
         try {
-            $user = $this->authService->verifyJwtToken($token);
+            $user = $this->authService->verifyJwtToken($token, 'access');
         } catch (InvalidCredentialsException $exception) {
             throw new HttpUnauthorizedException($request, 'Jeton invalide ou expiré.', $exception);
         }

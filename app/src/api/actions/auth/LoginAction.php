@@ -11,20 +11,18 @@ use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpUnauthorizedException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
-use toubilib\core\application\dto\UserDTO;
+use toubilib\core\application\dto\AuthTokensDTO;
 use toubilib\core\application\exceptions\InvalidCredentialsException;
-use toubilib\core\application\usecases\ServiceAuthInterface;
+use toubilib\core\application\usecases\AuthProviderInterface;
 use toubilib\core\domain\entities\user\UserRole;
 
 class LoginAction extends AbstractAction
 {
-    private ServiceAuthInterface $authService;
-    private int $tokenTtl;
+    private AuthProviderInterface $authProvider;
 
-    public function __construct(ServiceAuthInterface $authService, int $tokenTtl)
+    public function __construct(AuthProviderInterface $authProvider)
     {
-        $this->authService = $authService;
-        $this->tokenTtl = $tokenTtl;
+        $this->authProvider = $authProvider;
     }
 
     public function __invoke(Request $request, Response $response): Response
@@ -45,29 +43,29 @@ class LoginAction extends AbstractAction
         }
 
         try {
-            $user = $this->authService->authenticate($payload['email'], $payload['password']);
-            $token = $this->authService->generateJwtToken($user);
+            $auth = $this->authProvider->signin($payload['email'], $payload['password']);
+            $user = $auth->user;
         } catch (InvalidCredentialsException $exception) {
             throw new HttpUnauthorizedException($request, 'Identifiants incorrects.', $exception);
         } catch (Throwable $exception) {
             throw new HttpInternalServerErrorException($request, 'Une erreur interne est survenue.', $exception);
         }
 
-        $data = $this->buildResponseData($request, $user, $token);
+        $data = $this->buildResponseData($request, $auth);
         return $this->respondWithJson($response, $data, 200)
             ->withHeader('Cache-Control', 'no-store')
             ->withHeader('Pragma', 'no-cache');
     }
 
-    private function buildResponseData(Request $request, UserDTO $user, string $token): array
+    private function buildResponseData(Request $request, AuthTokensDTO $auth): array
     {
         $userResource = [
-            'id' => $user->id,
+            'id' => $auth->user->id,
             'type' => 'user',
             'attributes' => [
-                'email' => $user->email,
-                'role' => $user->role,
-                'role_name' => UserRole::toString($user->role),
+                'email' => $auth->user->email,
+                'role' => $auth->user->role,
+                'role_name' => UserRole::toString($auth->user->role),
             ],
             '_links' => [
                 'self' => ['href' => '/auth/me', 'method' => 'GET'],
@@ -80,7 +78,7 @@ class LoginAction extends AbstractAction
             'me' => ['href' => '/auth/me', 'method' => 'GET'],
         ];
 
-        $roleName = UserRole::toString($user->role);
+        $roleName = UserRole::toString($auth->user->role);
         if (in_array($roleName, ['praticien', 'admin'], true)) {
             $links['creer_rdv'] = ['href' => '/rdv', 'method' => 'POST'];
         }
@@ -89,13 +87,15 @@ class LoginAction extends AbstractAction
             'data' => [
                 'type' => 'auth',
                 'attributes' => [
-                    'token' => $token,
+                    'access_token' => $auth->accessToken,
+                    'refresh_token' => $auth->refreshToken,
                     'token_type' => 'Bearer',
-                    'expires_in' => $this->tokenTtl,
+                    'expires_in' => $auth->expiresIn,
+                    'refresh_expires_in' => $auth->refreshExpiresIn,
                 ],
                 'relationships' => [
                     'user' => [
-                        'data' => ['id' => $user->id, 'type' => 'user'],
+                        'data' => ['id' => $auth->user->id, 'type' => 'user'],
                     ],
                 ],
                 '_links' => $links,

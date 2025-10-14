@@ -42,14 +42,20 @@ interface ServiceAuthInterface
      * @param UserDTO $user L'utilisateur pour lequel créer le token
      * @return string Le token JWT
      */
-    public function generateJwtToken(UserDTO $user): string;
+    public function generateJwtToken(UserDTO $user, string $type = 'access'): string;
 
     /**
      * Vérifie et décode un token JWT
      * 
      * @param string $token Le token JWT à vérifier
+     * @param string $expectedType Type de token attendu (access|refresh)
      * @return UserDTO L'utilisateur correspondant au token
      * @throws InvalidCredentialsException Si le token est invalide ou expiré
      */
-    public function verifyJwtToken(string $token): UserDTO;
+    public function verifyJwtToken(string $token, string $expectedType = 'access'): UserDTO;
+
+    /**
+     * Retourne la durée de vie d'un type de token.
+     */
+    public function getTokenTtl(string $type = 'access'): int;
 }

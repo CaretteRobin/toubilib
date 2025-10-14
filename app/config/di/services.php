@@ -15,6 +15,10 @@ use toubilib\core\application\ports\UserRepositoryInterface;
 use toubilib\infra\repositories\PDOUserRepository;
 use toubilib\core\application\usecases\ServiceAuthInterface;
 use toubilib\core\application\usecases\ServiceAuth;
+use toubilib\core\application\usecases\AuthProviderInterface;
+use toubilib\core\application\usecases\AuthProvider;
+use toubilib\core\application\usecases\AuthorizationServiceInterface;
+use toubilib\core\application\usecases\AuthorizationService;
 
 return [
     // PDO connection factory
@@ -92,7 +96,16 @@ return [
         return new ServiceAuth(
             $c->get(UserRepositoryInterface::class),
             $c->get('auth.jwt.secret'),
-            $c->get('auth.jwt.expiration')
+            $c->get('auth.jwt.expiration'),
+            $c->get('auth.jwt.refresh_expiration')
         );
+    },
+
+    AuthProviderInterface::class => function (ContainerInterface $c): AuthProviderInterface {
+        return new AuthProvider($c->get(ServiceAuthInterface::class));
+    },
+
+    AuthorizationServiceInterface::class => function (ContainerInterface $c): AuthorizationServiceInterface {
+        return new AuthorizationService($c->get(ServiceRDVInterface::class));
     },
 ];
