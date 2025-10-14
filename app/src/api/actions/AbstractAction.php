@@ -5,9 +5,12 @@ namespace toubilib\api\actions;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use toubilib\core\application\dto\RdvDTO;
+use toubilib\api\middlewares\AuthenticatedMiddleware;
 use toubilib\core\application\dto\PraticienDTO;
+use toubilib\core\application\dto\RdvDTO;
+use toubilib\core\application\dto\UserDTO;
 use toubilib\core\domain\entities\rdv\Rdv;
+use toubilib\core\domain\entities\user\UserRole;
 
 abstract class AbstractAction
 {
@@ -41,7 +44,7 @@ abstract class AbstractAction
             'id' => $dto->id,
             'type' => 'rdv',
             'attributes' => $attributes,
-            '_links' => $this->rdvLinks($dto->id, $dto->praticien_id),
+            '_links' => $this->rdvLinks($request, $dto),
         ];
     }
 
@@ -51,28 +54,60 @@ abstract class AbstractAction
         $id = $data['id'];
         unset($data['id']);
 
+        /** @var UserDTO|null $user */
+        $user = $request->getAttribute(AuthenticatedMiddleware::ATTRIBUTE_USER);
+
+        $links = [
+            'self' => ['href' => '/praticiens/' . $id, 'method' => 'GET'],
+            'rdv_occupes' => ['href' => '/praticiens/' . $id . '/rdv/occupes', 'method' => 'GET'],
+        ];
+
+        if ($this->userHasAnyRole($user, ['admin', 'praticien'])) {
+            $links['agenda'] = ['href' => '/praticiens/' . $id . '/agenda', 'method' => 'GET'];
+            $links['creer_rdv'] = ['href' => '/rdv', 'method' => 'POST'];
+        }
+
         return [
             'id' => $id,
             'type' => 'praticien',
             'attributes' => $data,
-            '_links' => [
-                'self' => ['href' => '/praticiens/' . $id, 'method' => 'GET'],
-                'rdv_occupes' => ['href' => '/praticiens/' . $id . '/rdv/occupes', 'method' => 'GET'],
-                'agenda' => ['href' => '/praticiens/' . $id . '/agenda', 'method' => 'GET'],
-            ],
+            '_links' => $links,
         ];
     }
 
-    protected function rdvLinks(string $rdvId, string $praticienId): array
+    protected function rdvLinks(Request $request, RdvDTO $dto): array
     {
-        return [
-            'self' => ['href' => '/rdv/' . $rdvId, 'method' => 'GET'],
-            'praticien' => ['href' => '/praticiens/' . $praticienId, 'method' => 'GET'],
-            'agenda' => ['href' => '/praticiens/' . $praticienId . '/agenda', 'method' => 'GET'],
-            'annuler' => ['href' => '/rdv/' . $rdvId, 'method' => 'DELETE'],
-            'honorer' => ['href' => '/rdv/' . $rdvId, 'method' => 'PATCH', 'payload' => ['status' => 'honore']],
-            'absent' => ['href' => '/rdv/' . $rdvId, 'method' => 'PATCH', 'payload' => ['status' => 'absent']],
+        $links = [
+            'self' => ['href' => '/rdv/' . $dto->id, 'method' => 'GET'],
+            'praticien' => ['href' => '/praticiens/' . $dto->praticien_id, 'method' => 'GET'],
         ];
+
+        /** @var UserDTO|null $user */
+        $user = $request->getAttribute(AuthenticatedMiddleware::ATTRIBUTE_USER);
+
+        $status = $dto->status ?? Rdv::STATUS_SCHEDULED;
+        if ($this->userHasAnyRole($user, ['admin', 'praticien'])) {
+            $links['agenda'] = ['href' => '/praticiens/' . $dto->praticien_id . '/agenda', 'method' => 'GET'];
+            if ($status !== Rdv::STATUS_CANCELLED) {
+                $links['annuler'] = ['href' => '/rdv/' . $dto->id, 'method' => 'DELETE'];
+            }
+            if ($status !== Rdv::STATUS_COMPLETED && $status !== Rdv::STATUS_CANCELLED) {
+                $links['honorer'] = [
+                    'href' => '/rdv/' . $dto->id,
+                    'method' => 'PATCH',
+                    'payload' => ['status' => 'honore'],
+                ];
+            }
+            if ($status !== Rdv::STATUS_NO_SHOW && $status !== Rdv::STATUS_CANCELLED) {
+                $links['absent'] = [
+                    'href' => '/rdv/' . $dto->id,
+                    'method' => 'PATCH',
+                    'payload' => ['status' => 'absent'],
+                ];
+            }
+        }
+
+        return $links;
     }
 
     protected function collectionLinks(string $href): array
@@ -80,6 +115,16 @@ abstract class AbstractAction
         return [
             'self' => ['href' => $href, 'method' => 'GET'],
         ];
+    }
+
+    protected function userHasAnyRole(?UserDTO $user, array $roles): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        $roleName = strtolower(UserRole::toString($user->role));
+        $allowed = array_map('strtolower', $roles);
+        return in_array($roleName, $allowed, true);
     }
 
     private function statusLabel(int $status): string

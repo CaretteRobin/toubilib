@@ -29,19 +29,18 @@ class User
         return password_verify($password, $this->passwordHash);
     }
 
-    /**
-     * Vérifie si l'utilisateur est un administrateur
-     */
     public function isAdmin(): bool
     {
         return $this->role === UserRole::ADMIN;
     }
 
-    /**
-     * Vérifie si l'utilisateur est un utilisateur standard
-     */
-    public function isUser(): bool
+    public function isPatient(): bool
     {
-        return $this->role === UserRole::USER;
+        return $this->role === UserRole::PATIENT;
+    }
+
+    public function isPraticien(): bool
+    {
+        return $this->role === UserRole::PRATICIEN;
     }
 }

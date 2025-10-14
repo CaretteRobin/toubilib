@@ -88,6 +88,12 @@ class Rdv
         if ($this->isCancelled()) {
             throw new DomainException('Impossible d\'honorer un rendez-vous annulé.');
         }
+        if ($this->status === self::STATUS_COMPLETED) {
+            throw new DomainException('Le rendez-vous est déjà marqué comme honoré.');
+        }
+        if ($this->status === self::STATUS_NO_SHOW) {
+            throw new DomainException('Impossible d\'honorer un rendez-vous marqué comme absent.');
+        }
         $this->status = self::STATUS_COMPLETED;
     }
 
@@ -95,6 +101,12 @@ class Rdv
     {
         if ($this->isCancelled()) {
             throw new DomainException('Impossible de marquer absent un rendez-vous annulé.');
+        }
+        if ($this->status === self::STATUS_NO_SHOW) {
+            throw new DomainException('Le rendez-vous est déjà marqué comme absent.');
+        }
+        if ($this->status === self::STATUS_COMPLETED) {
+            throw new DomainException('Impossible de marquer absent un rendez-vous honoré.');
         }
         $this->status = self::STATUS_NO_SHOW;
     }

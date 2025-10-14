@@ -38,7 +38,8 @@ $app->options('/{routes:.+}', function (ServerRequestInterface $request, Respons
     return $response
         ->withHeader('Access-Control-Allow-Origin', '*')
         ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+        ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
+        ->withHeader('Access-Control-Expose-Headers', 'Location');
 });
 
 $app->add(function (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
@@ -46,7 +47,8 @@ $app->add(function (ServerRequestInterface $request, RequestHandlerInterface $ha
     return $response
         ->withHeader('Access-Control-Allow-Origin', '*')
         ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+        ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
+        ->withHeader('Access-Control-Expose-Headers', 'Location');
 });
 
 $app->addBodyParsingMiddleware();
