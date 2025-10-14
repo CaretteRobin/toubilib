@@ -30,6 +30,8 @@ class ServiceAuth implements ServiceAuthInterface
 
     public function authenticate(string $email, string $password): UserDTO
     {
+        $this->validateAuthenticationData($email, $password);
+
         try {
             $user = $this->userRepository->findByEmail($email);
         } catch (UserNotFoundException $e) {

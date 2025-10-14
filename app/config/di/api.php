@@ -1,6 +1,8 @@
 <?php
 
 use Psr\Container\ContainerInterface;
+use toubilib\api\actions\auth\LoginAction;
+use toubilib\api\actions\auth\MeAction;
 use toubilib\api\actions\praticien\ListerPraticiensAction;
 use toubilib\core\application\usecases\ServicePraticienInterface;
 use toubilib\api\actions\praticien\AfficherPraticienAction;
@@ -10,10 +12,22 @@ use toubilib\api\actions\rdv\ConsulterRdvAction;
 use toubilib\api\actions\rdv\CreerRdvAction;
 use toubilib\api\actions\rdv\AnnulerRdvAction;
 use toubilib\api\actions\rdv\ModifierStatutRdvAction;
+use toubilib\api\middlewares\AuthenticatedMiddleware;
 use toubilib\api\middlewares\CreateRendezVousMiddleware;
+use toubilib\api\middlewares\OptionalAuthMiddleware;
 use toubilib\core\application\usecases\ServiceRDVInterface;
+use toubilib\core\application\usecases\ServiceAuthInterface;
 
 return [
+    LoginAction::class => function (ContainerInterface $c): LoginAction {
+        return new LoginAction(
+            $c->get(ServiceAuthInterface::class),
+            $c->get('auth.jwt.expiration')
+        );
+    },
+    MeAction::class => function (): MeAction {
+        return new MeAction();
+    },
     ListerPraticiensAction::class => function (ContainerInterface $c): ListerPraticiensAction {
         return new ListerPraticiensAction($c->get(ServicePraticienInterface::class));
     },
@@ -40,5 +54,11 @@ return [
     },
     CreateRendezVousMiddleware::class => function (): CreateRendezVousMiddleware {
         return new CreateRendezVousMiddleware();
+    },
+    AuthenticatedMiddleware::class => function (ContainerInterface $c): AuthenticatedMiddleware {
+        return new AuthenticatedMiddleware($c->get(ServiceAuthInterface::class));
+    },
+    OptionalAuthMiddleware::class => function (ContainerInterface $c): OptionalAuthMiddleware {
+        return new OptionalAuthMiddleware($c->get(ServiceAuthInterface::class));
     },
 ];

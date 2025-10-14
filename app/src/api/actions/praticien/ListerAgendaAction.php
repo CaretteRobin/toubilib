@@ -12,6 +12,7 @@ use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpNotFoundException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
+use toubilib\api\middlewares\AuthenticatedMiddleware;
 use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\exceptions\ValidationException;
 use toubilib\core\application\usecases\ServiceRDVInterface;
@@ -61,13 +62,20 @@ class ListerAgendaAction extends AbstractAction
             $agenda = $this->service->listerAgenda($id, $debut, $fin);
             $items = array_map(fn($rdv) => $this->rdvResource($request, $rdv), $agenda);
             $self = (string)$request->getUri();
+            $links = [
+                'self' => ['href' => $self, 'method' => 'GET'],
+                'praticien' => ['href' => '/praticiens/' . $id, 'method' => 'GET'],
+            ];
+
+            /** @var \toubilib\core\application\dto\UserDTO|null $user */
+            $user = $request->getAttribute(AuthenticatedMiddleware::ATTRIBUTE_USER);
+            if ($this->userHasAnyRole($user, ['admin', 'praticien'])) {
+                $links['creer_rdv'] = ['href' => '/rdv', 'method' => 'POST'];
+            }
+
             $payload = [
                 'data' => $items,
-                '_links' => [
-                    'self' => ['href' => $self, 'method' => 'GET'],
-                    'praticien' => ['href' => '/praticiens/' . $id, 'method' => 'GET'],
-                    'creer_rdv' => ['href' => '/rdv', 'method' => 'POST'],
-                ],
+                '_links' => $links,
             ];
 
             return $this->respondWithJson($response, $payload);

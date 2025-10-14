@@ -116,7 +116,7 @@ class PDOUserRepository implements UserRepositoryInterface
     /**
      * Crée un nouvel utilisateur avec un mot de passe hashé
      */
-    public function createUser(string $email, string $password, int $role = UserRole::USER): User
+    public function createUser(string $email, string $password, int $role = UserRole::PATIENT): User
     {
         if (!UserRole::isValid($role)) {
             throw new \InvalidArgumentException("Invalid role: {$role}");
