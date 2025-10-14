@@ -40,9 +40,10 @@ interface ServiceAuthInterface
      * Crée un nouveau token JWT pour un utilisateur
      * 
      * @param UserDTO $user L'utilisateur pour lequel créer le token
+     * @param int|null $customExpiration Durée d'expiration personnalisée en secondes
      * @return string Le token JWT
      */
-    public function generateJwtToken(UserDTO $user): string;
+    public function generateJwtToken(UserDTO $user, ?int $customExpiration = null): string;
 
     /**
      * Vérifie et décode un token JWT

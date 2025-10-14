@@ -46,20 +46,21 @@ class LoginAction extends AbstractAction
 
         try {
             $user = $this->authService->authenticate($payload['email'], $payload['password']);
-            $token = $this->authService->generateJwtToken($user);
+            $accessToken = $this->authService->generateJwtToken($user);
+            $refreshToken = $this->authService->generateJwtToken($user, 7 * 24 * 3600); // 7 jours
         } catch (InvalidCredentialsException $exception) {
             throw new HttpUnauthorizedException($request, 'Identifiants incorrects.', $exception);
         } catch (Throwable $exception) {
             throw new HttpInternalServerErrorException($request, 'Une erreur interne est survenue.', $exception);
         }
 
-        $data = $this->buildResponseData($request, $user, $token);
+        $data = $this->buildResponseData($request, $user, $accessToken, $refreshToken);
         return $this->respondWithJson($response, $data, 200)
             ->withHeader('Cache-Control', 'no-store')
             ->withHeader('Pragma', 'no-cache');
     }
 
-    private function buildResponseData(Request $request, UserDTO $user, string $token): array
+    private function buildResponseData(Request $request, UserDTO $user, string $accessToken, string $refreshToken): array
     {
         $userResource = [
             'id' => $user->id,
@@ -89,7 +90,8 @@ class LoginAction extends AbstractAction
             'data' => [
                 'type' => 'auth',
                 'attributes' => [
-                    'token' => $token,
+                    'access_token' => $accessToken,
+                    'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
                     'expires_in' => $this->tokenTtl,
                 ],
