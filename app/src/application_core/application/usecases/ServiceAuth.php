@@ -60,13 +60,14 @@ class ServiceAuth implements ServiceAuthInterface
         return UserDTO::fromEntity($user);
     }
 
-    public function generateJwtToken(UserDTO $user, string $type = 'access'): string
+    public function generateJwtToken(UserDTO $user, ?int $customExpiration = null): string
     {
-        $ttl = $this->getTokenTtl($type);
+        $expiration = $customExpiration ?? $this->jwtExpiration;
+        
         $payload = [
             'iss' => 'toubilib',                    // Issuer
             'iat' => time(),                        // Issued at
-            'exp' => time() + $ttl, // Expiration
+            'exp' => time() + $expiration,          // Expiration
             'sub' => $user->id,                     // Subject (user ID)
             'email' => $user->email,
             'role' => $user->role,

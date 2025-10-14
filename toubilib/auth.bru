@@ -1,0 +1,22 @@
+meta {
+  name: auth
+  type: http
+  seq: 4
+}
+
+get {
+  url: Method: POST
+URL: http://localhost:8080/auth/login
+Headers: Content-Type: application/json
+
+Body:
+{
+    "email": "praticien1@test.com",
+http://localhost:8080/auth/me
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
