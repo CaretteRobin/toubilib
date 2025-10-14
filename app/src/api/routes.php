@@ -17,6 +17,7 @@ use toubilib\api\middlewares\CreateRendezVousMiddleware;
 use toubilib\api\middlewares\AuthenticatedMiddleware;
 use toubilib\api\middlewares\OptionalAuthMiddleware;
 use toubilib\api\middlewares\RequireRoleMiddleware;
+use toubilib\api\middlewares\AuthorizationMiddleware;
 
 return function( \Slim\App $app):\Slim\App {
     // POST /auth/login: authentification et génération de token JWT
@@ -35,11 +36,11 @@ return function( \Slim\App $app):\Slim\App {
         ->add(OptionalAuthMiddleware::class);
     // GET /praticiens/{id}/agenda?de=YYYY-MM-DD&a=YYYY-MM-DD (défaut journée courante)
     $app->get('/praticiens/{id}/agenda', ListerAgendaAction::class)
-        ->add(new RequireRoleMiddleware(['admin', 'praticien']))
+        ->add(AuthorizationMiddleware::class)
         ->add(AuthenticatedMiddleware::class);
     // GET /rdv/{id}: consulter un rendez-vous
     $app->get('/rdv/{id}', ConsulterRdvAction::class)
-        ->add(new RequireRoleMiddleware(['admin', 'praticien']))
+        ->add(AuthorizationMiddleware::class)
         ->add(AuthenticatedMiddleware::class);
     // POST /rdv: créer un rendez-vous
     $app->post('/rdv', CreerRdvAction::class)
