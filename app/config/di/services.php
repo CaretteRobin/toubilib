@@ -93,7 +93,8 @@ return [
         return new ServiceAuth(
             $c->get(UserRepositoryInterface::class),
             $c->get('auth.jwt.secret'),
-            $c->get('auth.jwt.expiration')
+            $c->get('auth.jwt.expiration'),
+            $c->get('auth.jwt.refresh_expiration')
         );
     },
 

@@ -39,4 +39,5 @@ return [
     // Auth settings
     'auth.jwt.secret' => $_ENV['AUTH_JWT_SECRET'] ?? 'your-super-secret-jwt-key-change-in-production',
     'auth.jwt.expiration' => (int)($_ENV['AUTH_JWT_EXPIRATION'] ?? 3600), // 1 hour by default
+    'auth.jwt.refresh_expiration' => (int)($_ENV['AUTH_JWT_REFRESH_EXPIRATION'] ?? 604800), // 7 days by default
 ];

@@ -11,20 +11,18 @@ use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpUnauthorizedException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
-use toubilib\core\application\dto\UserDTO;
+use toubilib\core\application\dto\AuthTokensDTO;
 use toubilib\core\application\exceptions\InvalidCredentialsException;
-use toubilib\core\application\usecases\ServiceAuthInterface;
+use toubilib\core\application\usecases\AuthProviderInterface;
 use toubilib\core\domain\entities\user\UserRole;
 
 class LoginAction extends AbstractAction
 {
-    private ServiceAuthInterface $authService;
-    private int $tokenTtl;
+    private AuthProviderInterface $authProvider;
 
-    public function __construct(ServiceAuthInterface $authService, int $tokenTtl)
+    public function __construct(AuthProviderInterface $authProvider)
     {
-        $this->authService = $authService;
-        $this->tokenTtl = $tokenTtl;
+        $this->authProvider = $authProvider;
     }
 
     public function __invoke(Request $request, Response $response): Response
@@ -63,12 +61,12 @@ class LoginAction extends AbstractAction
     private function buildResponseData(Request $request, UserDTO $user, string $accessToken, string $refreshToken): array
     {
         $userResource = [
-            'id' => $user->id,
+            'id' => $auth->user->id,
             'type' => 'user',
             'attributes' => [
-                'email' => $user->email,
-                'role' => $user->role,
-                'role_name' => UserRole::toString($user->role),
+                'email' => $auth->user->email,
+                'role' => $auth->user->role,
+                'role_name' => UserRole::toString($auth->user->role),
             ],
             '_links' => [
                 'self' => ['href' => '/auth/me', 'method' => 'GET'],
@@ -81,7 +79,7 @@ class LoginAction extends AbstractAction
             'me' => ['href' => '/auth/me', 'method' => 'GET'],
         ];
 
-        $roleName = UserRole::toString($user->role);
+        $roleName = UserRole::toString($auth->user->role);
         if (in_array($roleName, ['praticien', 'admin'], true)) {
             $links['creer_rdv'] = ['href' => '/rdv', 'method' => 'POST'];
         }
@@ -93,11 +91,12 @@ class LoginAction extends AbstractAction
                     'access_token' => $accessToken,
                     'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
-                    'expires_in' => $this->tokenTtl,
+                    'expires_in' => $auth->expiresIn,
+                    'refresh_expires_in' => $auth->refreshExpiresIn,
                 ],
                 'relationships' => [
                     'user' => [
-                        'data' => ['id' => $user->id, 'type' => 'user'],
+                        'data' => ['id' => $auth->user->id, 'type' => 'user'],
                     ],
                 ],
                 '_links' => $links,

@@ -13,19 +13,19 @@ use toubilib\api\actions\rdv\CreerRdvAction;
 use toubilib\api\actions\rdv\AnnulerRdvAction;
 use toubilib\api\actions\rdv\ModifierStatutRdvAction;
 use toubilib\api\middlewares\AuthenticatedMiddleware;
+use toubilib\api\middlewares\AuthorizationMiddleware;
 use toubilib\api\middlewares\CreateRendezVousMiddleware;
 use toubilib\api\middlewares\OptionalAuthMiddleware;
 use toubilib\api\middlewares\AuthorizationMiddleware;
 use toubilib\core\application\usecases\ServiceRDVInterface;
+use toubilib\core\application\usecases\AuthProviderInterface;
+use toubilib\core\application\usecases\AuthorizationServiceInterface;
 use toubilib\core\application\usecases\ServiceAuthInterface;
 use toubilib\core\application\usecases\ServiceAuthorization;
 
 return [
     LoginAction::class => function (ContainerInterface $c): LoginAction {
-        return new LoginAction(
-            $c->get(ServiceAuthInterface::class),
-            $c->get('auth.jwt.expiration')
-        );
+        return new LoginAction($c->get(AuthProviderInterface::class));
     },
     MeAction::class => function (): MeAction {
         return new MeAction();
