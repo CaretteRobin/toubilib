@@ -119,7 +119,7 @@ class PDOUserRepository implements UserRepositoryInterface
     public function createUser(string $email, string $password, int $role = UserRole::PATIENT): User
     {
         if (!UserRole::isValid($role)) {
-            throw new \InvalidArgumentException("Invalid role: {$role}");
+            throw new \InvalidArgumentException("Rôle invalide : {$role}");
         }
 
         $user = new User(

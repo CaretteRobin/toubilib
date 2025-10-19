@@ -14,14 +14,16 @@ use toubilib\api\actions\rdv\AnnulerRdvAction;
 use toubilib\api\actions\rdv\ModifierStatutRdvAction;
 use toubilib\api\middlewares\AuthenticatedMiddleware;
 use toubilib\api\middlewares\AuthorizationMiddleware;
+use toubilib\api\middlewares\CorsMiddleware;
 use toubilib\api\middlewares\CreateRendezVousMiddleware;
 use toubilib\api\middlewares\OptionalAuthMiddleware;
-use toubilib\api\middlewares\AuthorizationMiddleware;
 use toubilib\core\application\usecases\ServiceRDVInterface;
-use toubilib\core\application\usecases\AuthProviderInterface;
+use toubilib\api\provider\AuthProviderInterface;
+use toubilib\api\provider\AuthProvider;
+use toubilib\api\security\JwtManagerInterface;
+use toubilib\api\security\JwtManager;
 use toubilib\core\application\usecases\AuthorizationServiceInterface;
 use toubilib\core\application\usecases\ServiceAuthInterface;
-use toubilib\core\application\usecases\ServiceAuthorization;
 
 return [
     LoginAction::class => function (ContainerInterface $c): LoginAction {
@@ -46,10 +48,16 @@ return [
         return new ListerAgendaAction($c->get(ServiceRDVInterface::class));
     },
     CreerRdvAction::class => function (ContainerInterface $c): CreerRdvAction {
-        return new CreerRdvAction($c->get(ServiceRDVInterface::class));
+        return new CreerRdvAction(
+            $c->get(ServiceRDVInterface::class),
+            $c->get(AuthorizationServiceInterface::class)
+        );
     },
     AnnulerRdvAction::class => function (ContainerInterface $c): AnnulerRdvAction {
-        return new AnnulerRdvAction($c->get(ServiceRDVInterface::class));
+        return new AnnulerRdvAction(
+            $c->get(ServiceRDVInterface::class),
+            $c->get(AuthorizationServiceInterface::class)
+        );
     },
     ModifierStatutRdvAction::class => function (ContainerInterface $c): ModifierStatutRdvAction {
         return new ModifierStatutRdvAction($c->get(ServiceRDVInterface::class));
@@ -57,13 +65,36 @@ return [
     CreateRendezVousMiddleware::class => function (): CreateRendezVousMiddleware {
         return new CreateRendezVousMiddleware();
     },
+    JwtManagerInterface::class => function (ContainerInterface $c): JwtManagerInterface {
+        return new JwtManager(
+            $c->get('auth.jwt.secret'),
+            $c->get('auth.jwt.expiration'),
+            $c->get('auth.jwt.refresh_expiration'),
+            $c->get('auth.jwt.issuer')
+        );
+    },
+    AuthProviderInterface::class => function (ContainerInterface $c): AuthProviderInterface {
+        return new AuthProvider(
+            $c->get(ServiceAuthInterface::class),
+            $c->get(JwtManagerInterface::class)
+        );
+    },
     AuthenticatedMiddleware::class => function (ContainerInterface $c): AuthenticatedMiddleware {
-        return new AuthenticatedMiddleware($c->get(ServiceAuthInterface::class));
+        return new AuthenticatedMiddleware(
+            $c->get(JwtManagerInterface::class),
+            $c->get(ServiceAuthInterface::class)
+        );
     },
     OptionalAuthMiddleware::class => function (ContainerInterface $c): OptionalAuthMiddleware {
-        return new OptionalAuthMiddleware($c->get(ServiceAuthInterface::class));
+        return new OptionalAuthMiddleware(
+            $c->get(JwtManagerInterface::class),
+            $c->get(ServiceAuthInterface::class)
+        );
     },
     AuthorizationMiddleware::class => function (ContainerInterface $c): AuthorizationMiddleware {
-        return new AuthorizationMiddleware($c->get(ServiceAuthorization::class));
+        return new AuthorizationMiddleware($c->get(AuthorizationServiceInterface::class));
+    },
+    CorsMiddleware::class => function (ContainerInterface $c): CorsMiddleware {
+        return new CorsMiddleware($c->get('cors'));
     },
 ];

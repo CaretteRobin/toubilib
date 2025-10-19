@@ -1,8 +1,12 @@
 <?php
+declare(strict_types=1);
 
-namespace toubilib\core\application\dto;
+namespace toubilib\api\dto;
 
-class AuthTokensDTO implements \JsonSerializable
+use JsonSerializable;
+use toubilib\core\application\dto\UserDTO;
+
+class AuthTokensDTO implements JsonSerializable
 {
     public UserDTO $user;
     public string $accessToken;
@@ -10,8 +14,13 @@ class AuthTokensDTO implements \JsonSerializable
     public int $expiresIn;
     public int $refreshExpiresIn;
 
-    public function __construct(UserDTO $user, string $accessToken, string $refreshToken, int $expiresIn, int $refreshExpiresIn)
-    {
+    public function __construct(
+        UserDTO $user,
+        string $accessToken,
+        string $refreshToken,
+        int $expiresIn,
+        int $refreshExpiresIn
+    ) {
         $this->user = $user;
         $this->accessToken = $accessToken;
         $this->refreshToken = $refreshToken;

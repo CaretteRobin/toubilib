@@ -6,6 +6,6 @@ class UserNotFoundException extends \Exception
 {
     public function __construct(string $identifier, string $type = 'ID')
     {
-        parent::__construct("User not found with {$type}: {$identifier}");
+        parent::__construct("Utilisateur introuvable pour {$type} : {$identifier}");
     }
 }

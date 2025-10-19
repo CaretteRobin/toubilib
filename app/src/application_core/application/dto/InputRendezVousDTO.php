@@ -6,7 +6,7 @@ class InputRendezVousDTO
 {
     public string $praticienId;
     public string $patientId;
-    public string $dateHeureDebut; // ISO datetime string
+    public string $dateHeureDebut; // Date/heure au format ISO
     public string $motifId;
     public int $dureeMinutes;
 

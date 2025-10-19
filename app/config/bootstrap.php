@@ -2,10 +2,9 @@
 
 use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
-use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use toubilib\api\middlewares\CorsMiddleware;
 
 // Load environment variables from app/config/.env
 $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__);
@@ -34,22 +33,13 @@ $container = $containerBuilder->build();
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 
-$app->options('/{routes:.+}', function (ServerRequestInterface $request, ResponseInterface $response): ResponseInterface {
-    return $response
-        ->withHeader('Access-Control-Allow-Origin', '*')
-        ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
-        ->withHeader('Access-Control-Expose-Headers', 'Location');
+$corsMiddleware = $container->get(CorsMiddleware::class);
+
+$app->options('/{routes:.+}', function (ServerRequestInterface $request, ResponseInterface $response) use ($corsMiddleware): ResponseInterface {
+    return $corsMiddleware->handlePreflight($request, $response);
 });
 
-$app->add(function (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-    $response = $handler->handle($request);
-    return $response
-        ->withHeader('Access-Control-Allow-Origin', '*')
-        ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        ->withHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
-        ->withHeader('Access-Control-Expose-Headers', 'Location');
-});
+$app->add($corsMiddleware);
 
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();

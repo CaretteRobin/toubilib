@@ -11,9 +11,9 @@ use Slim\Exception\HttpInternalServerErrorException;
 use Slim\Exception\HttpUnauthorizedException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
-use toubilib\core\application\dto\AuthTokensDTO;
-use toubilib\core\application\exceptions\InvalidCredentialsException;
-use toubilib\core\application\usecases\AuthProviderInterface;
+use toubilib\api\dto\AuthTokensDTO;
+use toubilib\api\provider\AuthProviderInterface;
+use toubilib\core\domain\exceptions\InvalidCredentialsException;
 use toubilib\core\domain\entities\user\UserRole;
 
 class LoginAction extends AbstractAction
@@ -43,22 +43,20 @@ class LoginAction extends AbstractAction
         }
 
         try {
-            $user = $this->authService->authenticate($payload['email'], $payload['password']);
-            $accessToken = $this->authService->generateJwtToken($user);
-            $refreshToken = $this->authService->generateJwtToken($user, 7 * 24 * 3600); // 7 jours
+            $auth = $this->authProvider->signin($payload['email'], $payload['password']);
         } catch (InvalidCredentialsException $exception) {
             throw new HttpUnauthorizedException($request, 'Identifiants incorrects.', $exception);
         } catch (Throwable $exception) {
             throw new HttpInternalServerErrorException($request, 'Une erreur interne est survenue.', $exception);
         }
 
-        $data = $this->buildResponseData($request, $user, $accessToken, $refreshToken);
+        $data = $this->buildResponseData($request, $auth);
         return $this->respondWithJson($response, $data, 200)
             ->withHeader('Cache-Control', 'no-store')
             ->withHeader('Pragma', 'no-cache');
     }
 
-    private function buildResponseData(Request $request, UserDTO $user, string $accessToken, string $refreshToken): array
+    private function buildResponseData(Request $request, AuthTokensDTO $auth): array
     {
         $userResource = [
             'id' => $auth->user->id,
@@ -88,8 +86,8 @@ class LoginAction extends AbstractAction
             'data' => [
                 'type' => 'auth',
                 'attributes' => [
-                    'access_token' => $accessToken,
-                    'refresh_token' => $refreshToken,
+                    'access_token' => $auth->accessToken,
+                    'refresh_token' => $auth->refreshToken,
                     'token_type' => 'Bearer',
                     'expires_in' => $auth->expiresIn,
                     'refresh_expires_in' => $auth->refreshExpiresIn,

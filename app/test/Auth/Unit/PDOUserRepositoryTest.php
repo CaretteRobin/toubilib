@@ -123,18 +123,18 @@ class PDOUserRepositoryTest extends TestCase
             UserRole::USER
         );
 
-        // First call: check if email exists (should not find)
+        // Première vérification : on teste l'existence de l'email (le résultat doit être négatif)
         $this->pdoMock->expects($this->exactly(2))
             ->method('prepare')
             ->willReturnOnConsecutiveCalls(
-                $this->stmtMock, // for findByEmail check
-                $this->stmtMock  // for insert
+                $this->stmtMock, // préparation pour findByEmail
+                $this->stmtMock  // préparation pour l'insertion
             );
 
         $this->stmtMock->expects($this->exactly(2))
             ->method('execute');
 
-        // First fetch returns false (user doesn't exist)
+        // La première lecture renvoie false (l'utilisateur est absent)
         $this->stmtMock->expects($this->once())
             ->method('fetch')
             ->willReturn(false);
@@ -149,7 +149,7 @@ class PDOUserRepositoryTest extends TestCase
         $password = 'password123';
         $role = UserRole::USER;
 
-        // Mock the findByEmail call in save method
+        // Simulation de l'appel à findByEmail dans la méthode save
         $this->pdoMock->expects($this->exactly(2))
             ->method('prepare')
             ->willReturn($this->stmtMock);
@@ -159,7 +159,7 @@ class PDOUserRepositoryTest extends TestCase
 
         $this->stmtMock->expects($this->once())
             ->method('fetch')
-            ->willReturn(false); // User doesn't exist
+            ->willReturn(false); // l'utilisateur est absent
 
         $user = $this->repository->createUser($email, $password, $role);
 

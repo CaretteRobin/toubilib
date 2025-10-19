@@ -37,26 +37,12 @@ interface ServiceAuthInterface
     public function getUserByEmail(string $email): UserDTO;
 
     /**
-     * Crée un nouveau token JWT pour un utilisateur
-     * 
-     * @param UserDTO $user L'utilisateur pour lequel créer le token
-     * @param int|null $customExpiration Durée d'expiration personnalisée en secondes
-     * @return string Le token JWT
+     * Crée un utilisateur (usage administratif/tests).
+     *
+     * @param string $email Email du nouvel utilisateur
+     * @param string $password Mot de passe en clair
+     * @param int $role Rôle applicatif (cf. UserRole)
+     * @throws InvalidCredentialsException Si les données sont invalides
      */
-    public function generateJwtToken(UserDTO $user, ?int $customExpiration = null): string;
-
-    /**
-     * Vérifie et décode un token JWT
-     * 
-     * @param string $token Le token JWT à vérifier
-     * @param string $expectedType Type de token attendu (access|refresh)
-     * @return UserDTO L'utilisateur correspondant au token
-     * @throws InvalidCredentialsException Si le token est invalide ou expiré
-     */
-    public function verifyJwtToken(string $token, string $expectedType = 'access'): UserDTO;
-
-    /**
-     * Retourne la durée de vie d'un type de token.
-     */
-    public function getTokenTtl(string $type = 'access'): int;
+    public function createUser(string $email, string $password, int $role): UserDTO;
 }

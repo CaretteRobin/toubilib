@@ -60,6 +60,7 @@ AUTH_DB_PASS=toubiauth
 # JWT Configuration
 AUTH_JWT_SECRET=your-super-secret-jwt-key-change-in-production
 AUTH_JWT_EXPIRATION=3600
+AUTH_JWT_ISSUER=toubilib
 ```
 
 ## Utilisation
@@ -68,6 +69,7 @@ AUTH_JWT_EXPIRATION=3600
 
 ```php
 use toubilib\core\application\usecases\ServiceAuthInterface;
+use toubilib\api\security\JwtManagerInterface;
 
 // Injection via DI container
 /** @var ServiceAuthInterface $authService */
@@ -81,14 +83,16 @@ try {
     echo "Identifiants incorrects";
 }
 
-// Génération de token JWT
-$token = $authService->generateJwtToken($userDTO);
+// Génération et vérification de JWT via le manager dédié
+/** @var JwtManagerInterface $jwtManager */
+$jwtManager = $container->get(JwtManagerInterface::class);
+$accessToken = $jwtManager->createAccessToken($userDTO);
 
-// Vérification de token
 try {
-    $verifiedUser = $authService->verifyJwtToken($token);
+    $payload = $jwtManager->decode($accessToken, 'access');
+    $verifiedUser = $authService->getUserById($payload->subject);
     echo "Token valide pour: " . $verifiedUser->email;
-} catch (InvalidCredentialsException $e) {
+} catch (\toubilib\api\security\InvalidTokenException $e) {
     echo "Token invalide ou expiré";
 }
 ```

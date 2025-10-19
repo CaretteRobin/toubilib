@@ -40,4 +40,15 @@ return [
     'auth.jwt.secret' => $_ENV['AUTH_JWT_SECRET'] ?? 'your-super-secret-jwt-key-change-in-production',
     'auth.jwt.expiration' => (int)($_ENV['AUTH_JWT_EXPIRATION'] ?? 3600), // 1 hour by default
     'auth.jwt.refresh_expiration' => (int)($_ENV['AUTH_JWT_REFRESH_EXPIRATION'] ?? 604800), // 7 days by default
+    'auth.jwt.issuer' => $_ENV['AUTH_JWT_ISSUER'] ?? 'toubilib',
+
+    // CORS settings (aligné avec le cours 6)
+    'cors' => [
+        'allowed_origins' => array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '*')),
+        'allowed_methods' => $_ENV['CORS_ALLOWED_METHODS'] ?? 'GET,POST,PATCH,DELETE,OPTIONS',
+        'allowed_headers' => $_ENV['CORS_ALLOWED_HEADERS'] ?? 'Content-Type, Authorization',
+        'exposed_headers' => $_ENV['CORS_EXPOSED_HEADERS'] ?? 'Location',
+        'max_age' => (int)($_ENV['CORS_MAX_AGE'] ?? 86400),
+        'supports_credentials' => filter_var($_ENV['CORS_SUPPORTS_CREDENTIALS'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    ],
 ];

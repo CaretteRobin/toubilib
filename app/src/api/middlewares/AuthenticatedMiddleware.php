@@ -8,17 +8,21 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Slim\Exception\HttpUnauthorizedException;
-use toubilib\core\application\exceptions\InvalidCredentialsException;
+use toubilib\api\security\InvalidTokenException;
+use toubilib\api\security\JwtManagerInterface;
 use toubilib\core\application\usecases\ServiceAuthInterface;
+use toubilib\core\domain\exceptions\UserNotFoundException;
 
 class AuthenticatedMiddleware implements MiddlewareInterface
 {
     public const ATTRIBUTE_USER = 'auth.user';
 
+    private JwtManagerInterface $jwtManager;
     private ServiceAuthInterface $authService;
 
-    public function __construct(ServiceAuthInterface $authService)
+    public function __construct(JwtManagerInterface $jwtManager, ServiceAuthInterface $authService)
     {
+        $this->jwtManager = $jwtManager;
         $this->authService = $authService;
     }
 
@@ -32,8 +36,9 @@ class AuthenticatedMiddleware implements MiddlewareInterface
         $token = $matches[1];
 
         try {
-            $user = $this->authService->verifyJwtToken($token, 'access');
-        } catch (InvalidCredentialsException $exception) {
+            $payload = $this->jwtManager->decode($token, 'access');
+            $user = $this->authService->getUserById($payload->subject);
+        } catch (InvalidTokenException|UserNotFoundException $exception) {
             throw new HttpUnauthorizedException($request, 'Jeton invalide ou expiré.', $exception);
         }
 

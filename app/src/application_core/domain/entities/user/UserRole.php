@@ -22,7 +22,7 @@ class UserRole
 
     public static function toString(int $role): string
     {
-        return self::LABELS[$role] ?? 'unknown';
+        return self::LABELS[$role] ?? 'inconnu';
     }
 
     public static function fromString(string $role): ?int

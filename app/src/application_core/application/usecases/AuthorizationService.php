@@ -5,7 +5,6 @@ namespace toubilib\core\application\usecases;
 use toubilib\core\application\dto\RdvDTO;
 use toubilib\core\application\dto\UserDTO;
 use toubilib\core\application\exceptions\AuthorizationException;
-use toubilib\core\domain\entities\rdv\Rdv;
 use toubilib\core\domain\entities\user\UserRole;
 
 class AuthorizationService implements AuthorizationServiceInterface
@@ -49,5 +48,40 @@ class AuthorizationService implements AuthorizationServiceInterface
         }
 
         throw new AuthorizationException("Accès au rendez-vous refusé.");
+    }
+
+    public function assertCanCreateRdv(UserDTO $user, string $patientId): void
+    {
+        $role = UserRole::toString($user->role);
+
+        if ($role === 'admin') {
+            return;
+        }
+
+        if ($role === 'patient' && $user->id === $patientId) {
+            return;
+        }
+
+        throw new AuthorizationException('Création de rendez-vous refusée pour cet utilisateur.');
+    }
+
+    public function assertCanCancelRdv(UserDTO $user, string $rdvId): RdvDTO
+    {
+        $rdv = $this->rdvService->consulterRdv($rdvId);
+        $role = UserRole::toString($user->role);
+
+        if ($role === 'admin') {
+            return $rdv;
+        }
+
+        if ($role === 'praticien' && $rdv->praticien_id === $user->id) {
+            return $rdv;
+        }
+
+        if ($role === 'patient' && $rdv->patient_id === $user->id) {
+            return $rdv;
+        }
+
+        throw new AuthorizationException("Annulation du rendez-vous refusée.");
     }
 }

@@ -15,16 +15,11 @@ class ServiceAuthTest extends TestCase
 {
     private $userRepositoryMock;
     private ServiceAuth $serviceAuth;
-    private string $jwtSecret = 'test-secret-key';
 
     protected function setUp(): void
     {
         $this->userRepositoryMock = $this->createMock(UserRepositoryInterface::class);
-        $this->serviceAuth = new ServiceAuth(
-            $this->userRepositoryMock,
-            $this->jwtSecret,
-            3600 // 1 hour
-        );
+        $this->serviceAuth = new ServiceAuth($this->userRepositoryMock);
     }
 
     public function testAuthenticateSuccess(): void
@@ -121,55 +116,13 @@ class ServiceAuthTest extends TestCase
         $this->assertEquals($email, $userDTO->email);
     }
 
-    public function testGenerateJwtToken(): void
-    {
-        $userDTO = new UserDTO('user-id', 'test@example.com', UserRole::USER);
-        
-        $token = $this->serviceAuth->generateJwtToken($userDTO);
-
-        $this->assertIsString($token);
-        $this->assertNotEmpty($token);
-    }
-
-    public function testVerifyJwtToken(): void
-    {
-        // Create a user DTO and generate a token
-        $userDTO = new UserDTO('user-id', 'test@example.com', UserRole::USER);
-        $token = $this->serviceAuth->generateJwtToken($userDTO);
-
-        // Mock the repository to return the user when verifyJwtToken calls getUserById
-        $user = new User(
-            'user-id',
-            'test@example.com',
-            password_hash('password', PASSWORD_DEFAULT),
-            UserRole::USER
-        );
-
-        $this->userRepositoryMock->expects($this->once())
-            ->method('findById')
-            ->with('user-id')
-            ->willReturn($user);
-
-        $verifiedUserDTO = $this->serviceAuth->verifyJwtToken($token);
-
-        $this->assertInstanceOf(UserDTO::class, $verifiedUserDTO);
-        $this->assertEquals('user-id', $verifiedUserDTO->id);
-        $this->assertEquals('test@example.com', $verifiedUserDTO->email);
-    }
-
-    public function testVerifyJwtTokenInvalid(): void
-    {
-        $this->expectException(InvalidCredentialsException::class);
-        $this->serviceAuth->verifyJwtToken('invalid-token');
-    }
-
     public function testCreateUser(): void
     {
         $email = 'new@example.com';
         $password = 'password123';
         $role = UserRole::USER;
 
-        // Mock l'insertion - save() sera appelé avec le nouvel utilisateur
+        // Simulation de l'insertion : save() sera appelé avec le nouvel utilisateur
         $this->userRepositoryMock->expects($this->once())
             ->method('save')
             ->willReturnCallback(function(User $user) use ($email, $role) {

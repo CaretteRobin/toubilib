@@ -16,11 +16,11 @@ class Rdv
     public string $praticien_id;
     public string $patient_id;
     public ?string $patient_email;
-    public string $date_heure_debut; // ISO string Y-m-d H:i:s
+    public string $date_heure_debut; // Date/heure au format ISO Y-m-d H:i:s
     public ?int $status;
-    public int $duree; // in minutes
-    public ?string $date_heure_fin; // ISO string
-    public ?string $date_creation; // ISO string
+    public int $duree; // Durée en minutes
+    public ?string $date_heure_fin; // Date/heure de fin au format ISO
+    public ?string $date_creation; // Date de création au format ISO
     public ?string $motif_visite;
 
     public function __construct(

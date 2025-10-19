@@ -13,9 +13,10 @@ use toubilib\core\application\ports\PatientRepositoryInterface;
 use toubilib\infra\repositories\PDOPatientRepository;
 use toubilib\core\application\ports\UserRepositoryInterface;
 use toubilib\infra\repositories\PDOUserRepository;
+use toubilib\core\application\usecases\AuthorizationServiceInterface;
+use toubilib\core\application\usecases\AuthorizationService;
 use toubilib\core\application\usecases\ServiceAuthInterface;
 use toubilib\core\application\usecases\ServiceAuth;
-use toubilib\core\application\usecases\ServiceAuthorization;
 
 return [
     // PDO connection factory
@@ -84,24 +85,14 @@ return [
         ]);
     },
 
-    // Auth repository and service
+    // Auth repository et services
     UserRepositoryInterface::class => function (ContainerInterface $c): UserRepositoryInterface {
         return new PDOUserRepository($c->get('pdo.auth'));
     },
-    
     ServiceAuthInterface::class => function (ContainerInterface $c): ServiceAuthInterface {
-        return new ServiceAuth(
-            $c->get(UserRepositoryInterface::class),
-            $c->get('auth.jwt.secret'),
-            $c->get('auth.jwt.expiration'),
-            $c->get('auth.jwt.refresh_expiration')
-        );
+        return new ServiceAuth($c->get(UserRepositoryInterface::class));
     },
-
-    // Authorization service
-    ServiceAuthorization::class => function (ContainerInterface $c): ServiceAuthorization {
-        return new ServiceAuthorization(
-            $c->get(RdvRepositoryInterface::class)
-        );
+    AuthorizationServiceInterface::class => function (ContainerInterface $c): AuthorizationServiceInterface {
+        return new AuthorizationService($c->get(ServiceRDVInterface::class));
     },
 ];

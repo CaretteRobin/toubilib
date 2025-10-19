@@ -8,16 +8,15 @@ use Exception;
 use Ramsey\Uuid\Uuid;
 use toubilib\core\application\dto\CreneauOccupeDTO;
 use toubilib\core\application\dto\InputRendezVousDTO;
-use toubilib\core\application\dto\PraticienDetailDTO;
 use toubilib\core\application\dto\RdvDTO;
 use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\exceptions\ValidationException;
 use toubilib\core\application\ports\PatientRepositoryInterface;
 use toubilib\core\application\ports\PraticienRepositoryInterface;
 use toubilib\core\application\ports\RdvRepositoryInterface;
-use toubilib\core\domain\entities\rdv\Rdv;
+use toubilib\core\domain\entities\praticien\MotifVisite;
 use toubilib\core\domain\entities\praticien\PraticienDetail;
-use toubilib\core\application\security\CurrentUserContext; // Service à créer qui représente l'utilisateur authentifié
+use toubilib\core\domain\entities\rdv\Rdv;
 use toubilib\core\domain\exceptions\DomainException;
 
 class ServiceRDV implements ServiceRDVInterface
@@ -25,18 +24,15 @@ class ServiceRDV implements ServiceRDVInterface
     private RdvRepositoryInterface $rdvRepository;
     private PraticienRepositoryInterface $praticienRepository;
     private PatientRepositoryInterface $patientRepository;
-    private CurrentUserContext $currentUser;
 
     public function __construct(
         RdvRepositoryInterface $rdvRepository,
         PraticienRepositoryInterface $praticienRepository,
-        PatientRepositoryInterface $patientRepository,
-        CurrentUserContext $currentUser // Injecter le contexte de l'utilisateur courant
+        PatientRepositoryInterface $patientRepository
     ) {
         $this->rdvRepository = $rdvRepository;
         $this->praticienRepository = $praticienRepository;
         $this->patientRepository = $patientRepository;
-        $this->currentUser = $currentUser;
     }
 
     public function listerCreneauxOccupes(string $praticienId, string $dateDebut, string $dateFin): array
@@ -52,6 +48,7 @@ class ServiceRDV implements ServiceRDVInterface
             $debut->format('Y-m-d H:i:s'),
             $fin->format('Y-m-d H:i:s')
         );
+
         $slots = [];
         foreach ($rdvs as $rdv) {
             if ($rdv->isCancelled()) {
@@ -62,13 +59,14 @@ class ServiceRDV implements ServiceRDVInterface
                 $rdv->getDateHeureFin()->format('Y-m-d H:i:s')
             );
         }
+
         return $slots;
     }
 
     public function consulterRdv(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
-        if (!$rdv) {
+        if ($rdv === null) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
 
@@ -83,12 +81,9 @@ class ServiceRDV implements ServiceRDVInterface
 
         $praticien = $this->getPraticienDetailOrFail($dto->praticienId);
 
-        // Le patientId n'est plus fourni par le DTO, mais par l'utilisateur authentifié.
-        $patientId = $this->currentUser->getId();
-
-        $patient = $this->patientRepository->findById($patientId);
-        if (!$patient) {
-            throw new ResourceNotFoundException(sprintf('Patient %s introuvable', $patientId));
+        $patient = $this->patientRepository->findById($dto->patientId);
+        if ($patient === null) {
+            throw new ResourceNotFoundException(sprintf('Patient %s introuvable', $dto->patientId));
         }
 
         $motif = $this->resolveMotif($dto->motifId, $praticien->motifs);
@@ -99,7 +94,7 @@ class ServiceRDV implements ServiceRDVInterface
         $rdv = new Rdv(
             Uuid::uuid4()->toString(),
             $dto->praticienId,
-            $patientId,
+            $dto->patientId,
             $patient->email,
             $debut->format('Y-m-d H:i:s'),
             Rdv::STATUS_SCHEDULED,
@@ -117,10 +112,7 @@ class ServiceRDV implements ServiceRDVInterface
     public function annulerRendezVous(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
-        // TODO: Ajouter la vérification des permissions (ACL)
-        // $this->currentUser->assertCanCancel($rdv);
-
-        if (!$rdv) {
+        if ($rdv === null) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
 
@@ -131,16 +123,13 @@ class ServiceRDV implements ServiceRDVInterface
         }
 
         $this->rdvRepository->save($rdv);
+
         return $this->mapToDto($rdv);
     }
 
-    public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array // TODO: Sécuriser, seul le praticien concerné peut voir son agenda
+    public function listerAgenda(string $praticienId, string $dateDebut, string $dateFin): array
     {
-        // Vérification des permissions : le praticien ne peut voir que son propre agenda.
-        $this->currentUser->assertIsPraticien($praticienId);
-
         $this->getPraticienDetailOrFail($praticienId);
-
 
         $debut = $this->parseDate($dateDebut);
         $fin = $this->parseDate($dateFin);
@@ -151,20 +140,14 @@ class ServiceRDV implements ServiceRDVInterface
             $debut->format('Y-m-d H:i:s'),
             $fin->format('Y-m-d H:i:s')
         );
-        $agenda = [];
-        foreach ($rdvs as $rdv) {
-            $agenda[] = $this->mapToDto($rdv);
-        }
-        return $agenda;
+
+        return array_map(fn(Rdv $rdv) => $this->mapToDto($rdv), $rdvs);
     }
 
     public function honorerRendezVous(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
-        // TODO: Ajouter la vérification des permissions (ACL)
-        // $this->currentUser->assertCanManage($rdv);
-
-        if (!$rdv) {
+        if ($rdv === null) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
 
@@ -175,16 +158,14 @@ class ServiceRDV implements ServiceRDVInterface
         }
 
         $this->rdvRepository->save($rdv);
+
         return $this->mapToDto($rdv);
     }
 
     public function marquerRendezVousAbsent(string $id): RdvDTO
     {
         $rdv = $this->rdvRepository->findById($id);
-        // TODO: Ajouter la vérification des permissions (ACL)
-        // $this->currentUser->assertCanManage($rdv);
-
-        if (!$rdv) {
+        if ($rdv === null) {
             throw new ResourceNotFoundException(sprintf('Rendez-vous %s introuvable', $id));
         }
 
@@ -195,9 +176,13 @@ class ServiceRDV implements ServiceRDVInterface
         }
 
         $this->rdvRepository->save($rdv);
+
         return $this->mapToDto($rdv);
     }
 
+    /**
+     * Transforme l'entité domaine en DTO exploitable par les actions.
+     */
     private function mapToDto(Rdv $rdv): RdvDTO
     {
         return new RdvDTO(
@@ -214,37 +199,37 @@ class ServiceRDV implements ServiceRDVInterface
         );
     }
 
-    private function parseDate(string $date): DateTimeImmutable
+    private function parseDate(string $value): DateTimeImmutable
     {
         try {
-            return new DateTimeImmutable($date);
+            return new DateTimeImmutable($value);
         } catch (Exception $exception) {
-            throw new ValidationException('Format de date invalide, attendu ISO Y-m-d H:i:s', previous: $exception);
+            throw new ValidationException(sprintf('Date invalide : %s', $value), previous: $exception);
         }
     }
 
-    private function assertDureeValide(int $duree): void
+    private function assertPeriodeChronologique(DateTimeImmutable $debut, DateTimeImmutable $fin): void
     {
-        if ($duree <= 0) {
-            throw new ValidationException('La durée du rendez-vous doit être strictement positive.');
+        if ($fin <= $debut) {
+            throw new ValidationException('La date de fin doit être postérieure à la date de début.');
+        }
+    }
+
+    private function assertDureeValide(int $minutes): void
+    {
+        if ($minutes <= 0) {
+            throw new ValidationException('La durée du rendez-vous doit être supérieure à zéro.');
         }
     }
 
     private function assertCreneauOuvre(DateTimeImmutable $debut, DateTimeImmutable $fin): void
     {
-        if ($debut->format('Y-m-d') !== $fin->format('Y-m-d')) {
-            throw new ValidationException('Le rendez-vous doit se dérouler sur une seule journée.');
+        if ($debut < new DateTimeImmutable('now')) {
+            throw new ValidationException('Impossible de créer un rendez-vous dans le passé.');
         }
 
-        $jour = (int)$debut->format('N');
-        if ($jour > 5) {
-            throw new ValidationException('Le rendez-vous doit être planifié du lundi au vendredi.');
-        }
-
-        $heureOuverture = $debut->setTime(8, 0);
-        $heureFermeture = $debut->setTime(19, 0);
-        if ($debut < $heureOuverture || $fin > $heureFermeture) {
-            throw new ValidationException('Le rendez-vous doit être planifié entre 08:00 et 19:00.');
+        if ($fin <= $debut) {
+            throw new ValidationException('Le créneau doit se terminer après son heure de début.');
         }
     }
 
@@ -257,41 +242,38 @@ class ServiceRDV implements ServiceRDVInterface
         );
 
         foreach ($overlaps as $rdv) {
-            if ($rdv->isCancelled()) {
-                continue;
+            if (!$rdv->isCancelled()) {
+                throw new ValidationException('Le praticien est déjà occupé sur ce créneau.');
             }
-            throw new ValidationException('Le praticien n\'est pas disponible sur ce créneau.');
-        }
-    }
-
-    private function assertPeriodeChronologique(DateTimeImmutable $debut, DateTimeImmutable $fin): void
-    {
-        if ($fin <= $debut) {
-            throw new ValidationException('La date de fin doit être postérieure à la date de début.');
         }
     }
 
     /**
-     * @param array<int, mixed> $motifs
+     * Vérifie que le motif saisi appartient bien au praticien.
      */
-    private function resolveMotif(string $motifId, array $motifs): string
+    private function resolveMotif(string $motifId, array $motifs): ?string
     {
+        if ($motifId === '') {
+            return null;
+        }
+
+        /** @var MotifVisite $motif */
         foreach ($motifs as $motif) {
             if ((string)$motif->id === (string)$motifId) {
                 return $motif->libelle;
             }
         }
 
-        throw new ValidationException('Motif de visite invalide pour ce praticien.');
+        throw new ValidationException(sprintf('Motif %s invalide pour ce praticien.', $motifId));
     }
 
-    private function getPraticienDetailOrFail(string $praticienId): PraticienDetail
+    private function getPraticienDetailOrFail(string $id): PraticienDetail
     {
-        $detail = $this->praticienRepository->findDetailById($praticienId);
-        if ($detail === null) {
-            throw new ResourceNotFoundException(sprintf('Praticien %s introuvable', $praticienId));
+        $praticien = $this->praticienRepository->findDetailById($id);
+        if ($praticien === null) {
+            throw new ResourceNotFoundException(sprintf('Praticien %s introuvable', $id));
         }
 
-        return $detail;
+        return $praticien;
     }
 }

@@ -12,18 +12,23 @@ use Slim\Exception\HttpNotFoundException;
 use toubilib\api\exceptions\HttpConflictException;
 use Throwable;
 use toubilib\api\actions\AbstractAction;
+use toubilib\api\middlewares\AuthenticatedMiddleware;
 use toubilib\core\application\exceptions\ApplicationException;
 use toubilib\core\application\exceptions\ResourceNotFoundException;
 use toubilib\core\application\exceptions\ValidationException;
+use toubilib\core\application\usecases\AuthorizationServiceInterface;
 use toubilib\core\application\usecases\ServiceRDVInterface;
+use toubilib\core\application\dto\UserDTO;
 
 class AnnulerRdvAction extends AbstractAction
 {
     private ServiceRDVInterface $service;
+    private AuthorizationServiceInterface $authorizationService;
 
-    public function __construct(ServiceRDVInterface $service)
+    public function __construct(ServiceRDVInterface $service, AuthorizationServiceInterface $authorizationService)
     {
         $this->service = $service;
+        $this->authorizationService = $authorizationService;
     }
 
     public function __invoke(Request $request, Response $response, array $args): Response
@@ -39,6 +44,14 @@ class AnnulerRdvAction extends AbstractAction
         }
 
         try {
+            /** @var UserDTO|null $user */
+            $user = $request->getAttribute(AuthenticatedMiddleware::ATTRIBUTE_USER);
+            if ($user === null) {
+                throw new HttpInternalServerErrorException($request, 'Utilisateur introuvable dans la requête.');
+            }
+
+            $this->authorizationService->assertCanCancelRdv($user, $id);
+
             $dto = $this->service->annulerRendezVous($id);
             $payload = ['data' => $this->rdvResource($request, $dto)];
             return $this->respondWithJson($response, $payload, 200);
